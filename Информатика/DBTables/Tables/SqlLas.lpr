@@ -8,7 +8,7 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, tachartlazaruspkg, main, UTables, UFilter, UTableForm, UTrackBarPaint,
-  UEditForm, USchedule, UMyDBTools;
+  UEditForm, USchedule, UMyDBTools, UEditCardForm;
 
 {$R *.res}
 

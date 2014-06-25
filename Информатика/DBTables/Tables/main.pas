@@ -78,8 +78,6 @@ begin
 end;
 
 procedure TForm1.ScheduleItemClick(Sender: TObject);
-var
-  ScheduleTable:  TScheduleTable;
 begin
   ScheduleTable := TScheduleTable.CreateNew(Self);
   ScheduleTable.Show;

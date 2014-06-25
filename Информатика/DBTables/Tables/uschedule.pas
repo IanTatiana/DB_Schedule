@@ -7,7 +7,7 @@ interface
 uses
   types, Classes, SysUtils, Forms, Grids, ExtCtrls, UTables, SQLdb,
   IBConnection, db, Dialogs, UMyDBTools, StdCtrls, Graphics, Controls,
-  UFilter;
+  UFilter, UEditCardForm;
 
 type
   TScheduleElem =  record
@@ -56,6 +56,7 @@ type
 
     procedure CreateEditBtn(aRect: TRect; CursorPos: TPoint);
     procedure FreeEditBtn();
+    procedure AddElem(Sender: TObject);
   public
     ScheduleMatrix: array of array of array of TScheduleElem;
     ShowElemOfCell: array of array of boolean;
@@ -67,6 +68,7 @@ type
     procedure UpdateScheduleGrid();
     procedure FillScheduleMatrix();
     procedure Selection();
+    procedure Show;
   end;
 
 const
@@ -74,6 +76,8 @@ const
   RHeight_h = 48;
   CWidth = 380;
   RHeight = 110;
+var
+  ScheduleTable: TScheduleTable;
 
 implementation
 
@@ -108,7 +112,13 @@ begin
     OnDblClick := @DrawGridDblClick;
     OnMouseMove:= @DrawGridMouseMove;
   end;
+  EditCardForm := TEditCard.CreateNew(Self, Num);
+  ShowSchedule(Self);
+end;
 
+procedure TScheduleTable.Show();
+begin
+  inherited Show;
   ShowSchedule(Self);
 end;
 
@@ -150,17 +160,24 @@ begin
 end;
 
 procedure TScheduleTable.CreateEditBtn(aRect: TRect; CursorPos: TPoint);
+var
+  Col, Row: integer;
 const
   side = 24;
 begin
+  ScheduleGrid.MouseToCell(CursorPos.X, CursorPos.Y, Col, Row);
   AddBtn := TButton.Create(ScheduleGrid);
   with AddBtn do begin
     Parent := ScheduleGrid;
     Height := side;
     Width := side;
-    Top := aRect.Top + ((CursorPos.Y - aRect.Top) div RHeight) * RHeight;
+    if (Length(ScheduleMatrix[Col][Row]) > 1) then
+      Top := aRect.Top + ((CursorPos.Y - aRect.Top) div RHeight) * RHeight
+    else
+      Top := aRect.Top;
     Left := aRect.Right - Width;
     Caption := ' + ';
+    OnClick := @AddElem;
   end;
   DelBtn := TButton.Create(ScheduleGrid);
   with DelBtn do begin
@@ -180,6 +197,11 @@ begin
     Left := AddBtn.Left;
     Caption := ' ! ';
   end;
+end;
+
+procedure TScheduleTable.AddElem(Sender: TObject);
+begin
+  EditCardForm.Show(9, ctAddition);
 end;
 
 procedure TScheduleTable.FreeEditBtn();

@@ -17,6 +17,7 @@ type
     procedure ExecuteQuery(AQuery: string);
     procedure ExecuteParamQuery(AQuery: string; i: integer);
     procedure EditQuery(AEditQuery: string);
+    destructor Destroy; override;
   end;
 
 var
@@ -37,6 +38,13 @@ begin
   end;
   DataSource := TDataSource.Create(AOwner);
   DataSource.DataSet := SQLQuery;
+end;
+
+destructor TMyDBTools.Destroy;
+begin
+  DataSource.Free; DataSource := nil;
+  SQLQuery.Free; SQLQuery := nil;
+  inherited Destroy;
 end;
 
 procedure TMyDBTools.ExecuteQuery(AQuery: string);

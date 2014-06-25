@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Dialogs, Menus, ExtCtrls, Grids, UTables,
-  UTableForm, USchedule, sqldb, IBConnection, UMyDBTools, Controls;
+  UTableForm, USchedule, sqldb, IBConnection, UMyDBTools, Controls, StdCtrls;
 
 type
 

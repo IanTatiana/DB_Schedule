@@ -5,12 +5,11 @@ unit USchedule;
 interface
 
 uses
-  Classes, SysUtils, Forms, types, Grids, ExtCtrls, UTables, SQLdb,
+  types, Classes, SysUtils, Forms, Grids, ExtCtrls, UTables, SQLdb,
   IBConnection, db, Dialogs, UMyDBTools, StdCtrls, Graphics, Controls,
   UFilter;
 
 type
-
   TScheduleElem =  record
     Header: string;
     SchElemField: array [0..7] of string;
@@ -38,6 +37,10 @@ type
     CheckIndicate: Array [0..7] of TCheckBox;
     Indicate: TImage;
     DG_DblClick: boolean;
+
+    AddBtn,
+    DelBtn,
+    ChangeBtn: TButton;
     procedure ChangeIndicate(Sender: TObject);
     procedure CheckClick(Sender: TObject);
     procedure PreferClick(Sender: TObject);
@@ -49,6 +52,10 @@ type
     procedure DrawGridDblClick(Sender: TObject);
     procedure DrawGridDrawCell(Sender: TObject;
       aCol, aRow: Integer; aRect: TRect; aState:TGridDrawState);
+    procedure DrawGridMouseMove(Sender: TObject;Shift: TShiftState; X, Y: Integer);
+
+    procedure CreateEditBtn(aRect: TRect; CursorPos: TPoint);
+    procedure FreeEditBtn();
   public
     ScheduleMatrix: array of array of array of TScheduleElem;
     ShowElemOfCell: array of array of boolean;
@@ -70,6 +77,7 @@ const
 
 implementation
 
+//----TScheduleTable------------------------------------------------------------
 constructor TScheduleTable.CreateNew(AOwner: TComponent; Num: Integer=0);
 begin
   inherited CreateNew(AOwner);
@@ -98,7 +106,9 @@ begin
     Parent := Self;
     OnDrawCell := @DrawGridDrawCell;
     OnDblClick := @DrawGridDblClick;
+    OnMouseMove:= @DrawGridMouseMove;
   end;
+
   ShowSchedule(Self);
 end;
 
@@ -124,7 +134,59 @@ begin
     ScheduleGrid.RowHeights[Row] := High(ScheduleMatrix[Col][Row]) * RHeight
   else
     ScheduleGrid.RowHeights[Row] := RHeight;
-  //ScheduleGrid.Invalidate;
+end;
+
+procedure TScheduleTable.DrawGridMouseMove(
+  Sender: TObject; Shift: TShiftState; X, Y: integer);
+var
+  Col, Row: integer;
+begin
+  ScheduleGrid.MouseToCell(X, Y, Col, Row);
+  if (Col = 0) or (Row = 0) then begin
+    Exit;
+  end;
+  FreeEditBtn();
+  CreateEditBtn(ScheduleGrid.CellRect(Col, Row), Point(X, Y));
+end;
+
+procedure TScheduleTable.CreateEditBtn(aRect: TRect; CursorPos: TPoint);
+const
+  side = 24;
+begin
+  AddBtn := TButton.Create(ScheduleGrid);
+  with AddBtn do begin
+    Parent := ScheduleGrid;
+    Height := side;
+    Width := side;
+    Top := aRect.Top + ((CursorPos.Y - aRect.Top) div RHeight) * RHeight;
+    Left := aRect.Right - Width;
+    Caption := ' + ';
+  end;
+  DelBtn := TButton.Create(ScheduleGrid);
+  with DelBtn do begin
+    Parent := ScheduleGrid;
+    Height := side;
+    Width := side;
+    Top := AddBtn.Top + side;
+    Left := AddBtn.Left;
+    Caption := ' - ';
+  end;
+  ChangeBtn := TButton.Create(ScheduleGrid);
+  with ChangeBtn do begin
+    Parent := ScheduleGrid;
+    Height := side;
+    Width := side;
+    Top := DelBtn.Top + side;
+    Left := AddBtn.Left;
+    Caption := ' ! ';
+  end;
+end;
+
+procedure TScheduleTable.FreeEditBtn();
+begin
+  AddBtn.Free;
+  DelBtn.Free;
+  ChangeBtn.Free;
 end;
 
 procedure TScheduleTable.CreateSectionPanel();
@@ -320,6 +382,7 @@ begin
     Table.SelectFields[CB_Vert.ItemIndex + 1].OrderID;
   UpdateScheduleGrid();
   FilterPanel.ShowBtnClick(Sender);
+
   //FillScheduleMatrix();
 end;
 
@@ -398,6 +461,7 @@ end;
 procedure TScheduleTable.Selection();
 begin
   //
+  //sche
 end;
 
 procedure TScheduleTable.SetCellHeight(aRow, r: integer);

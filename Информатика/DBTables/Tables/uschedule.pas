@@ -11,7 +11,7 @@ uses
 
 type
   TScheduleElem =  record
-    Header: string;
+    Header, ID: string;
     SchElemField: array [0..7] of string;
   end;
 
@@ -37,6 +37,7 @@ type
     CheckIndicate: Array [0..7] of TCheckBox;
     Indicate: TImage;
     DG_DblClick: boolean;
+    OrderInCell: integer;
 
     AddBtn,
     DelBtn,
@@ -57,6 +58,7 @@ type
     procedure CreateEditBtn(aRect: TRect; CursorPos: TPoint);
     procedure FreeEditBtn();
     procedure AddElem(Sender: TObject);
+    procedure DelElem(Sender: TObject);
   public
     ScheduleMatrix: array of array of array of TScheduleElem;
     ShowElemOfCell: array of array of boolean;
@@ -151,6 +153,7 @@ procedure TScheduleTable.DrawGridMouseMove(
 var
   Col, Row: integer;
 begin
+  //
   ScheduleGrid.MouseToCell(X, Y, Col, Row);
   if (Col = 0) or (Row = 0) then begin
     Exit;
@@ -165,13 +168,14 @@ var
 const
   side = 24;
 begin
+  OrderInCell := (CursorPos.Y - aRect.Top) div RHeight;
   ScheduleGrid.MouseToCell(CursorPos.X, CursorPos.Y, Col, Row);
   AddBtn := TButton.Create(ScheduleGrid);
   with AddBtn do begin
     Parent := ScheduleGrid;
     Height := side;
     Width := side;
-    if (Length(ScheduleMatrix[Col][Row]) > 1) then
+    if Length(ScheduleMatrix[Col][Row]) > 1 then
       Top := aRect.Top + ((CursorPos.Y - aRect.Top) div RHeight) * RHeight
     else
       Top := aRect.Top;
@@ -179,29 +183,48 @@ begin
     Caption := ' + ';
     OnClick := @AddElem;
   end;
-  DelBtn := TButton.Create(ScheduleGrid);
-  with DelBtn do begin
-    Parent := ScheduleGrid;
-    Height := side;
-    Width := side;
-    Top := AddBtn.Top + side;
-    Left := AddBtn.Left;
-    Caption := ' - ';
-  end;
-  ChangeBtn := TButton.Create(ScheduleGrid);
-  with ChangeBtn do begin
-    Parent := ScheduleGrid;
-    Height := side;
-    Width := side;
-    Top := DelBtn.Top + side;
-    Left := AddBtn.Left;
-    Caption := ' ! ';
+  if Length(ScheduleMatrix[Col][Row]) > 0 then begin
+    DelBtn := TButton.Create(ScheduleGrid);
+    with DelBtn do begin
+      Parent := ScheduleGrid;
+      Height := side;
+      Width := side;
+      Top := AddBtn.Top + side;
+      Left := AddBtn.Left;
+      Caption := ' - ';
+      OnClick := @DelElem;
+    end;
+    ChangeBtn := TButton.Create(ScheduleGrid);
+    with ChangeBtn do begin
+      Parent := ScheduleGrid;
+      Height := side;
+      Width := side;
+      Top := DelBtn.Top + side;
+      Left := AddBtn.Left;
+      Caption := ' ! ';
+    end;
   end;
 end;
 
 procedure TScheduleTable.AddElem(Sender: TObject);
 begin
   EditCardForm.Show(9, ctAddition);
+end;
+
+procedure TScheduleTable.DelElem(Sender: TObject);
+var
+  Col, Row, i: integer;
+begin
+  Col := ScheduleGrid.Col;
+  Row := ScheduleGrid.Row;
+  ID := ScheduleMatrix[Col][Row][OrderInCell].ID;
+  for i := 0 to High(ScheduleMatrix[Col][Row][OrderInCell].SchElemField) do
+  begin
+    SetLength(SelSchElem, Length(SelSchElem) + 1);
+    SelSchElem[High(SelSchElem)] :=
+      ScheduleMatrix[Col][Row][OrderInCell].SchElemField[i];
+  end;
+  EditCardForm.Show(9, ctDeletion);
 end;
 
 procedure TScheduleTable.FreeEditBtn();
@@ -443,7 +466,7 @@ begin
       q.SQLQuery.Next;
     end;
   end;
-  q.Free;
+  q.Free; q :=  nil;
   if ShowHeads then begin
     ScheduleGrid.ColWidths[0] :=
       Table.SelectFields[CB_Vert.ItemIndex + 1].Width + 18;
@@ -464,6 +487,8 @@ begin
             (DBTools.DataSource.DataSet.Fields[CB_Vert.ItemIndex + 3].Value
                = ScheduleMatrix[0][j][0].Header)
       do begin
+        ScheduleMatrix[i][j][r].ID :=
+          DBTools.DataSource.DataSet.Fields[2].AsString;
         for k := 0 to DBTools.DataSource.DataSet.FieldCount - 4 do
           ScheduleMatrix[i][j][r].SchElemField[k] :=
             DBTools.DataSource.DataSet.Fields[k + 3].AsString;
@@ -473,10 +498,8 @@ begin
       SetLength(ScheduleMatrix[i][j], r + 1);
       if ShowAll and (ScheduleGrid.RowHeights[j] < r* RHeight)then
         ScheduleGrid.RowHeights[j] := r * RHeight;
-        //SetCellHeight(j, r);
     end;
   end;
-  //ShowMessage(IntToStr(Length(ScheduleMatrix[1][1])));
   ScheduleGrid.Invalidate;
 end;
 

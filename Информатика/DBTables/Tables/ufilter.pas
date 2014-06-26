@@ -159,8 +159,6 @@ begin
   DBTools.ExecuteQuery(DBTools.SQLQuery.SQL.Text + ' ' + OrderByText);
   if Parent is TTableForm then
     (Parent as TTableForm).Russification;
-  //if Parent.ClassNameIs('TScheduleTable') then
-  //  (Parent as TScheduleTable).UpdateScheduleGrid();
   if Parent is TScheduleTable then
     (Parent as TScheduleTable).FillScheduleMatrix();
 end;

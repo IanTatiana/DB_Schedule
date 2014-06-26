@@ -26,6 +26,8 @@ type
 
     L_Horizontal,
     L_Vertical: TLabel;
+    CB_Horz,
+    CB_Vert: TComboBox;
     ShowBtn: TButton;
 
     ScheduleGrid: TDrawGrid;
@@ -55,12 +57,11 @@ type
 
     procedure CreateEditBtn(aRect: TRect; CursorPos: TPoint);
     procedure FreeEditBtn();
+    procedure InitSelectedData();
     procedure AddElem(Sender: TObject);
     procedure DelElem(Sender: TObject);
     procedure UpdateElem(Sender: TObject);
   public
-    CB_Horz,
-    CB_Vert: TComboBox;
     ScheduleMatrix: array of array of array of TScheduleElem;
     ShowElemOfCell: array of array of boolean;
     DBTools: TMyDBTools;
@@ -93,7 +94,6 @@ begin
   Position := poScreenCenter;
   Caption := 'Расписание';
   Table := Tables[9];
-
   DBTools := TMyDBTools.Create(AOwner, Num);
 
   ToolsPanel := TPanel.Create(Self);
@@ -137,10 +137,8 @@ begin
     if (Length(ScheduleMatrix[i][Row]) <= Length(ScheduleMatrix[Col][Row])) then
       ShowElemOfCell[i][Row] :=
         ShowElemOfCell[ScheduleGrid.Col][ScheduleGrid.Row]
-    else begin
+    else
       ShowElemOfCell[i][Row] := False;
-      //ShowAllClick(Self);
-    end;
   end;
   if ShowElemOfCell[Col][Row] then
     ScheduleGrid.RowHeights[Row] := High(ScheduleMatrix[Col][Row]) * RHeight
@@ -153,7 +151,6 @@ procedure TScheduleTable.DrawGridMouseMove(
 var
   Col, Row: integer;
 begin
-  //
   CurPos := Point(X, Y);
   ScheduleGrid.MouseToCell(X, Y, Col, Row);
   if (Col = 0) or (Row = 0) then begin
@@ -211,7 +208,7 @@ begin
   EditCardForm.Show(9, ctAddition);
 end;
 
-procedure TScheduleTable.DelElem(Sender: TObject);
+procedure TScheduleTable.InitSelectedData();
 var
   Col, Row, i: integer;
 begin
@@ -224,22 +221,17 @@ begin
     SelSchElem[High(SelSchElem)] :=
       ScheduleMatrix[Col][Row][OrderInCell].SchElemField[i];
   end;
+end;
+
+procedure TScheduleTable.DelElem(Sender: TObject);
+begin
+  InitSelectedData();
   EditCardForm.Show(9, ctDeletion);
 end;
 
 procedure TScheduleTable.UpdateElem(Sender: TObject);
-var
-  Col, Row, i: integer;
 begin
-  ScheduleGrid.MouseToCell(CurPos.X, CurPos.Y, Col, Row);
-  ID := ScheduleMatrix[Col][Row][OrderInCell].ID;
-  SetLength(SelSchElem, 0);
-  for i := 0 to High(ScheduleMatrix[Col][Row][OrderInCell].SchElemField) do
-  begin
-    SetLength(SelSchElem, Length(SelSchElem) + 1);
-    SelSchElem[High(SelSchElem)] :=
-      ScheduleMatrix[Col][Row][OrderInCell].SchElemField[i];
-  end;
+  InitSelectedData();
   EditCardForm.Show(9, ctUpdating);
 end;
 

@@ -7,8 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, tachartlazaruspkg, main, UTables, UFilter, UTableForm, UTrackBarPaint,
-  UEditForm, USchedule, UMyDBTools, UEditCardForm;
+  Forms, tachartlazaruspkg, main, UTables, UFilter, UTableForm, UTrackBarPaint, USchedule, UMyDBTools, UEditCardForm;
 
 {$R *.res}
 

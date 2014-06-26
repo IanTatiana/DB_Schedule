@@ -6,15 +6,13 @@ interface
 
 uses
   Classes, SysUtils, DBGrids, Forms, SQLdb, IBConnection, db, Controls,
-  ExtCtrls, StdCtrls, UTables, UFilter, Dialogs, UEditForm, UMyDBTools;
+  ExtCtrls, StdCtrls, UTables, UFilter, Dialogs, UEditCardForm, UMyDBTools;
 
 type
   TTableForm = class(TForm)
   protected
     Table: TTable;
     FilterPanel: TFilterPanel;
-
-    EditForm: TEditForm;
     DBTools: TMyDBTools;
   published
     DBGrids: TDBGrid;
@@ -62,8 +60,8 @@ begin
     Table.JoinName);
   Russification;
   FilterPanel := TFilterPanel.Create(Self, DBTools, Num);
-
-  EditForm := TEditForm.CreateNew(Self, Num);
+  EditCardForm.Free; EditCardForm := nil;
+  EditCardForm := TEditCard.CreateNew(Self, Num);
 end;
 
 procedure TTableForm.Activate;
@@ -77,13 +75,13 @@ procedure TTableForm.GridDblClick(Sender: TObject);
 var
   i: integer;
 begin
+  SetLength(SelSchElem, 0);
   for i := 1 to DBGrids.Columns.Count - 1 do begin
-    SetLength(EditForm.SelectedVal, Length(EditForm.SelectedVal) + 1);
-    EditForm.SelectedVal[High(EditForm.SelectedVal)] :=
-      DBGrids.Columns[i].Field.Text;
+    SetLength(SelSchElem, Length(SelSchElem) + 1);
+    SelSchElem[High(SelSchElem)] := DBGrids.Columns[i].Field.Text;
   end;
-  EditForm.ID := DBTools.DataSource.DataSet.Fields[0].Value;
-  EditForm.Show();
+  ID := DBTools.DataSource.DataSet.Fields[0].Value;
+  EditCardForm.Show(TableNum, ctUpdating);
 end;
 
 procedure TTableForm.Show();

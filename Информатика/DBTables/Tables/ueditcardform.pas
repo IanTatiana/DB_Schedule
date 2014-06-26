@@ -42,6 +42,7 @@ type
     procedure UpdateBtnClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent; ACardType: TCardType);
+    destructor Destroy; override;
   end;
 
   TEditCard = class(TForm)
@@ -51,6 +52,7 @@ type
   public
     constructor CreateNew(AOwner: TComponent; Num: Integer=0); override;
     procedure Show(ANum: integer; ACardType: TCardType);
+    procedure Close;
   end;
 
 var
@@ -62,7 +64,7 @@ var
 implementation
 
 uses
-  USchedule;
+  USchedule, UTableForm;
 
 //----TEditPanel----------------------------------------------------------------
 constructor TEditPanel.Create(AOwner: TComponent);
@@ -109,7 +111,9 @@ begin
           Items.Add(db1.SQLQuery.FieldByName(
             ByName(FTable.Fields[i].ForeignKey.FieldName)).AsString);
           SetLength(FPossibleList[i - 1], Length(FPossibleList[i - 1]) + 1);
-          FPossibleList[i - 1][High(FPossibleList[i - 1])] := db1.GetValue(0);
+          FPossibleList[i - 1][High(FPossibleList[i - 1])] :=
+            db1.SQLQuery.Fields[0].AsString;
+          db1.DataSource.DataSet.Next;
         end;
       end;
     end;
@@ -165,7 +169,9 @@ var
   i: integer;
   Lim, Val: string;
   db: TMyDBTools;
+  str: string; //
 begin
+  str := '';
   db := TMyDBTools.Create(Self, TableNum);
   Lim := ' NEXT VALUE FOR ' + FTable.GenName;
   for i := 0 to High(FComboBoxes) do
@@ -184,7 +190,7 @@ begin
           Val := Fields[i].EditVal.Text;}
       end;
       tJoin: begin
-        Val := IntToStr(FComboBoxes[i].ItemIndex + 1);
+        Val := FPossibleList[i][FComboBoxes[i].ItemIndex];
       end;
       tUnChange: begin
         ShowMessage('Данная таблица не подлежит редактированию!');
@@ -193,10 +199,9 @@ begin
     end;
     db.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
-  db.SQLQuery.ExecSQL;
-  db.Free; db := nil;
+  db.SQLQuery.ExecSQL; db.Free; db := nil;
   SQLTransaction_.Commit;
-  ScheduleTable.Show;
+  SetLength(SelSchElem, 0);
   (Parent as TEditCard).Close;
 end;
 
@@ -240,6 +245,13 @@ begin
   end;
 end;
 
+destructor TSelData.Destroy;
+begin
+  DelBtn.Free; DelBtn := nil;
+  UpdateBtn.Free; UpdateBtn := nil;
+  inherited Destroy;
+end;
+
 procedure TSelData.DelBtnClick(Sender: TObject);
 var
   db: TMyDBTools;
@@ -254,7 +266,6 @@ begin
   end;
   db.SQLQuery.ExecSQL;   db.Free; db := nil;
   SQLTransaction_.Commit;
-  ScheduleTable.Show;
   SetLength(SelSchElem, 0);
   (Parent as TEditCard).Close;
 end;
@@ -289,10 +300,8 @@ begin
     end;
     db.SQLQuery.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
-  ShowMessage(db.SQLQuery.SQL.Text);
   db.SQLQuery.ExecSQL;
   SQLTransaction_.Commit;
-  ScheduleTable.Show;
   SetLength(SelSchElem, 0);
   (Parent as TEditCard).Close;
 end;
@@ -323,5 +332,14 @@ begin
   FEditPanel.Parent := Self;
   inherited Show;
 end;
+
+procedure TEditCard.Close;
+begin
+  ScheduleTable.Show;
+  if Parent is TTableForm then
+    (Parent as TTableForm).Show;
+  inherited Close;
+end;
+
 end.
 

@@ -264,7 +264,6 @@ begin
     SQL.Text := 'UPDATE ' + Table.en + ' SET ' + Lim + ' WHERE ' +
       Table.Fields[0].en + ' = ' + ID;
   end;
-
   for i := 0 to High(Fields) do begin
     Case Table.TableType of
       tCascade, tMarker, tUnChange: begin
@@ -277,7 +276,6 @@ begin
     end;
     DBTools.SQLQuery.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
-
   DBTools.SQLQuery.ExecSQL;
   SQLTransaction_.Commit;
   Close;

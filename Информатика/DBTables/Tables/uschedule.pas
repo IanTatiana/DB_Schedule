@@ -38,7 +38,7 @@ type
     Indicate: TImage;
     DG_DblClick: boolean;
     OrderInCell: integer;
-
+    CurPos: TPoint;
     AddBtn,
     DelBtn,
     ChangeBtn: TButton;
@@ -130,7 +130,6 @@ var
 begin
   Col := ScheduleGrid.Col;
   Row := ScheduleGrid.Row;
-
   ShowElemOfCell[Col][Row] :=
     not ShowElemOfCell[ScheduleGrid.Col][ScheduleGrid.Row];
   for i := 0 to High(ShowElemOfCell) do begin
@@ -154,6 +153,7 @@ var
   Col, Row: integer;
 begin
   //
+  CurPos := Point(X, Y);
   ScheduleGrid.MouseToCell(X, Y, Col, Row);
   if (Col = 0) or (Row = 0) then begin
     Exit;
@@ -183,26 +183,24 @@ begin
     Caption := ' + ';
     OnClick := @AddElem;
   end;
-  if Length(ScheduleMatrix[Col][Row]) > 0 then begin
-    DelBtn := TButton.Create(ScheduleGrid);
-    with DelBtn do begin
-      Parent := ScheduleGrid;
-      Height := side;
-      Width := side;
-      Top := AddBtn.Top + side;
-      Left := AddBtn.Left;
-      Caption := ' - ';
-      OnClick := @DelElem;
-    end;
-    ChangeBtn := TButton.Create(ScheduleGrid);
-    with ChangeBtn do begin
-      Parent := ScheduleGrid;
-      Height := side;
-      Width := side;
-      Top := DelBtn.Top + side;
-      Left := AddBtn.Left;
-      Caption := ' ! ';
-    end;
+  DelBtn := TButton.Create(ScheduleGrid);
+  with DelBtn do begin
+    Parent := ScheduleGrid;
+    Height := side;
+    Width := side;
+    Top := AddBtn.Top + side;
+    Left := AddBtn.Left;
+    Caption := ' - ';
+    OnClick := @DelElem;
+  end;
+  ChangeBtn := TButton.Create(ScheduleGrid);
+  with ChangeBtn do begin
+    Parent := ScheduleGrid;
+    Height := side;
+    Width := side;
+    Top := DelBtn.Top + side;
+    Left := AddBtn.Left;
+    Caption := ' ! ';
   end;
 end;
 
@@ -214,10 +212,11 @@ end;
 procedure TScheduleTable.DelElem(Sender: TObject);
 var
   Col, Row, i: integer;
+  str : string;
 begin
-  Col := ScheduleGrid.Col;
-  Row := ScheduleGrid.Row;
+  ScheduleGrid.MouseToCell(CurPos.X, CurPos.Y, Col, Row);
   ID := ScheduleMatrix[Col][Row][OrderInCell].ID;
+  SetLength(SelSchElem, 0);
   for i := 0 to High(ScheduleMatrix[Col][Row][OrderInCell].SchElemField) do
   begin
     SetLength(SelSchElem, Length(SelSchElem) + 1);

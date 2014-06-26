@@ -9,7 +9,7 @@ uses
   StdCtrls, UTables, UMyDBTools;
 
 type
-  TCardType = (ctAddition, ctDeletion, ctEditing);
+  TCardType = (ctAddition, ctDeletion, ctUpdating);
 
   TEditPanel = class(TPanel)
   protected
@@ -17,13 +17,10 @@ type
     FComboBoxes: array of TComboBox;
     FTable: TTable;
     FCardType: TCardType;
-    //DBTools: TMyDBTools;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
-
-  TEditPanelClases = class of TEditPanel;
 
   TAddPanel = class(TEditPanel)
   protected
@@ -34,19 +31,13 @@ type
     destructor Destroy; override;
   end;
 
-  TDelPanel = class(TEditPanel)
+  TSelData = class(TEditPanel)
   protected
-    DelBtn: TButton;
-  public
+    DelBtn, UpdateBtn: TButton;
     procedure DelBtnClick(Sender: TObject);
-    constructor Create(AOwner: TComponent); override;
-  end;
-
-  TUpdatePanel = class(TEditPanel)
-  protected
-    UpdateBtn: TButton;
+    //procedure UpdateBtnClicl(Sender: TObject);
   public
-    //constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; ACardType: TCardType);
   end;
 
   TEditCard = class(TForm)
@@ -58,11 +49,8 @@ type
     procedure Show(ANum: integer; ACardType: TCardType);
   end;
 
-procedure RegisterEditPanelClass(AEditPanelClass: TEditPanelClases);
-
 var
   EditCardForm: TEditCard;
-  EditPanelClassArray: array of TEditPanelClases;
   TableNum: integer;
   SelSchElem: array of string;
   ID: string;
@@ -71,13 +59,6 @@ implementation
 
 uses
   USchedule;
-
-procedure RegisterEditPanelClass(AEditPanelClass: TEditPanelClases);
-begin
-  SetLength(EditPanelClassArray, Length(EditPanelClassArray) + 1);
-  EditPanelClassArray[High(EditPanelClassArray)] := AEditPanelClass;
-  RegisterClass(AEditPanelClass);
-end;
 
 //----TEditPanel----------------------------------------------------------------
 constructor TEditPanel.Create(AOwner: TComponent);
@@ -210,8 +191,8 @@ begin
   (Parent as TEditCard).Close;
 end;
 
-//----TDelPanel----------------------------------------------------------
-constructor TDelPanel.Create(AOwner: TComponent);
+//----TSelData------------------------------------------------------------------
+constructor TSelData.Create(AOwner: TComponent; ACardType: TCardType);
 var
   i: integer;
   db1, db2: TMyDBTools;
@@ -220,6 +201,7 @@ const
   BtnHeight = 32;
 begin
   inherited Create(AOwner);
+  FTable := Tables[TableNum];
   db1 := TMyDBTools.Create(AOwner, TableNum);
   db2 := TMyDBTools.Create(AOwner, TableNum);
   db1.ExecuteQuery('SELECT ' + FTable.FieldsList() +
@@ -241,19 +223,23 @@ begin
     end;
     FComboBoxes[i].Text := SelSchElem[i];
   end;
-  DelBtn := TButton.Create(Self);
-  with DelBtn do begin
-    Parent := Self;
-    Width := 80;
-    Height := BtnHeight;
-    Top := EditCardForm.Height - BtnHeight - BtnOffset;
-    Left := EditCardForm.Width - Width - BtnOffset;
-    Caption := ' Удалить ';
-    OnClick := @DelBtnClick;
+  db1.Free; db1 := nil;
+  db2.Free; db2 := nil;
+  if ACardType = ctDeletion then begin
+    DelBtn := TButton.Create(Self);
+    with DelBtn do begin
+      Parent := Self;
+      Width := 80;
+      Height := BtnHeight;
+      Top := EditCardForm.Height - BtnHeight - BtnOffset;
+      Left := EditCardForm.Width - Width - BtnOffset;
+      Caption := ' Удалить ';
+      OnClick := @DelBtnClick;
+    end;
   end;
 end;
 
-procedure TDelPanel.DelBtnClick(Sender: TObject);
+procedure TSelData.DelBtnClick(Sender: TObject);
 var
   db: TMyDBTools;
   Table: TTable;
@@ -289,17 +275,15 @@ end;
 procedure TEditCard.Show(ANum: integer; ACardType: TCardType);
 begin
   TableNum := ANum;
+  FEditPanel.Free; FEditPanel := nil;
   if ACardType = ctAddition then
     FEditPanel := TAddPanel.Create(Self);
   if ACardType = ctDeletion then
-    FEditPanel := TDelPanel.Create(Self);
+    FEditPanel := TSelData.Create(Self, ctDeletion);
+  if ACardType = ctUpdating then
+    FEditPanel := TSelData.Create(Self, ctUpdating);
   FEditPanel.Parent := Self;
   inherited Show;
 end;
-
-initialization
-  RegisterEditPanelClass(TAddPanel);
-  RegisterEditPanelClass(TDelPanel);
-  RegisterEditPanelClass(TUpdatePanel);
 end.
 

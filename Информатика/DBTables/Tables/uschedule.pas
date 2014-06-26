@@ -115,7 +115,9 @@ begin
     OnDblClick := @DrawGridDblClick;
     OnMouseMove:= @DrawGridMouseMove;
   end;
+  EditCardForm.Free; EditCardForm := nil;
   EditCardForm := TEditCard.CreateNew(Self, Num);
+  CurForm := @ScheduleTable;
   ShowSchedule(Self);
 end;
 
@@ -433,10 +435,7 @@ begin
   FilterPanel.OrderByText :=
     ' ORDER BY ' + Table.SelectFields[CB_Horz.ItemIndex + 1].OrderID + ', ' +
     Table.SelectFields[CB_Vert.ItemIndex + 1].OrderID;
-  UpdateScheduleGrid();
-  FilterPanel.ShowBtnClick(Sender);
-
-  //FillScheduleMatrix();
+  FilterPanel.ShowBtnClick(Self);
 end;
 
 procedure TScheduleTable.UpdateScheduleGrid();
@@ -447,7 +446,7 @@ var
 begin
   SetLength(ScheduleMatrix, 0, 0, 0);
   SetLength(ShowElemOfCell, 0, 0);
-  q := TMyDBTools.Create(nil, 0);
+  q := TMyDBTools.Create(Self, 9);
   with ScheduleGrid do begin
     Options := Options + [goSmoothScroll];
     ColCount := GetCountFrom(CB_Horz.ItemIndex + 1) + 1;

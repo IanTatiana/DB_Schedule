@@ -60,6 +60,7 @@ var
   TableNum: integer;
   SelSchElem: array of string;
   ID: string;
+  CurForm: ^TForm;
 
 implementation
 
@@ -197,8 +198,10 @@ begin
         Exit;
       end;
     end;
+    str := str + IntToStr(i) + ') ' + Val + #10#13;
     db.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
+  //ShowMessage(str);
   db.SQLQuery.ExecSQL; db.Free; db := nil;
   SQLTransaction_.Commit;
   SetLength(SelSchElem, 0);
@@ -324,19 +327,18 @@ begin
   TableNum := ANum;
   FEditPanel.Free; FEditPanel := nil;
   if ACardType = ctAddition then
-    FEditPanel := TAddPanel.Create(Self);
-  if ACardType = ctDeletion then
-    FEditPanel := TSelData.Create(Self, ctDeletion);
-  if ACardType = ctUpdating then
-    FEditPanel := TSelData.Create(Self, ctUpdating);
+    FEditPanel := TAddPanel.Create(Self)
+  else
+    FEditPanel := TSelData.Create(Self, ACardType);
   FEditPanel.Parent := Self;
   inherited Show;
 end;
 
 procedure TEditCard.Close;
 begin
-  ScheduleTable.Show;
-  if Parent is TTableForm then
+  if Owner is TScheduleTable then
+    ScheduleTable.Show;
+  if Owner is TTableForm then
     (Parent as TTableForm).Show;
   inherited Close;
 end;

@@ -15,8 +15,12 @@ type
   protected
     FLabel: array of TLabel;
     FComboBoxes: array of TComboBox;
+    FEngName: array of string;
     FTable: TTable;
     FCardType: TCardType;
+
+    //  Список возможных значений для одной ячейки в отсортированном порядке
+    FPossibleList: array of array of string;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -35,7 +39,7 @@ type
   protected
     DelBtn, UpdateBtn: TButton;
     procedure DelBtnClick(Sender: TObject);
-    //procedure UpdateBtnClicl(Sender: TObject);
+    procedure UpdateBtnClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent; ACardType: TCardType);
   end;
@@ -64,15 +68,16 @@ uses
 constructor TEditPanel.Create(AOwner: TComponent);
 var
   i: integer;
-  db: TMyDBTools;
+  db1: TMyDBTools;
 begin
   inherited Create(AOwner);
   FTable := Tables[TableNum];
-  db := TMyDBTools.Create(Self, TableNum);
-  db.ExecuteQuery('SELECT COUNT(' + FTable.Fields[0].en + ') FROM ' +
-    FTable.en);
+  db1 := TMyDBTools.Create(Self, TableNum);
   Align := alClient;
   for i := 1 to High(Tables[TableNum].SelectFields) do begin
+    SetLength(FEngName, Length(FEngName) + 1);
+    SetLength(FPossibleList, Length(FPossibleList) + 1);
+    FEngName[High(FEngName)] := FTable.Fields[i].en;
     SetLength(FLabel, Length(FLabel) + 1);
     FLabel[High(FLabel)] := TLabel.Create(Self);
     with FLabel[High(FLabel)] do begin
@@ -82,6 +87,8 @@ begin
       Height := 24;
       Top := i * 16 + (i - 1)* Height;
     end;
+    db1.ExecuteQuery('SELECT ' + FTable.FieldsList() +
+      ' FROM ' + FTable.JoinName);
     SetLength(FComboBoxes, Length(FComboBoxes) + 1);
     FComboBoxes[High(FComboBoxes)] := TComboBox.Create(Self);
     with FComboBoxes[High(FComboBoxes)] do begin
@@ -90,21 +97,24 @@ begin
       Height := 24;
       Width := 200;
       Top := i * 16 + (i - 1) * Height;
-      db.DataSource.DataSet.First;
+      db1.DataSource.DataSet.First;
       if FTable.Fields[i].ForeignKey.Table.Name = UTables.null then
-        while not db.SQLQuery.EOF do
-          Items.Add(db.GetValue(i))
+        while not db1.SQLQuery.EOF do
+          Items.Add(db1.GetValue(i))
       else begin
-        db.ExecuteQuery('SELECT ' +
-          FTable.Fields[i].ForeignKey.FieldName + ' FROM ' +
+        db1.ExecuteQuery('SELECT * FROM ' +
           FTable.Fields[i].ForeignKey.Table.Name + ' ORDER BY ' +
           FTable.Fields[i].ForeignKey.Table.OrderBy);
-        while not db.SQLQuery.EOF do
-          Items.AddObject(db.GetValue(0), TObject(0));
+        while not db1.SQLQuery.EOF do begin
+          Items.Add(db1.SQLQuery.FieldByName(
+            ByName(FTable.Fields[i].ForeignKey.FieldName)).AsString);
+          SetLength(FPossibleList[i - 1], Length(FPossibleList[i - 1]) + 1);
+          FPossibleList[i - 1][High(FPossibleList[i - 1])] := db1.GetValue(0);
+        end;
       end;
     end;
   end;
-  db.Free; db := nil;
+  db1.Free; db1 := nil;
 end;
 
 destructor TEditPanel.Destroy;
@@ -117,7 +127,6 @@ begin
   end;
   SetLength(FLabel, 0);
   SetLength(FComboBoxes, 0);
-  //DBTools.Free;
   FTable := nil;
   inherited Destroy;
 end;
@@ -201,30 +210,10 @@ const
   BtnHeight = 32;
 begin
   inherited Create(AOwner);
-  FTable := Tables[TableNum];
-  db1 := TMyDBTools.Create(AOwner, TableNum);
-  db2 := TMyDBTools.Create(AOwner, TableNum);
-  db1.ExecuteQuery('SELECT ' + FTable.FieldsList() +
-      ' FROM ' + FTable.JoinName);
-  db1.DataSource.DataSet.First;
-  FTable := Tables[TableNum];
   for i := 0 to High(FComboBoxes) do begin
     FComboBoxes[i].Style := csDropDownList;
-    if FTable.Fields[i].ForeignKey.Table.Name = UTables.null then
-      while not db1.SQLQuery.EOF do
-        FComboBoxes[i].Items.Add(db1.GetValue(i))
-    else begin
-      db2.ExecuteQuery('SELECT ' +
-        FTable.Fields[i].ForeignKey.FieldName + ' FROM ' +
-        FTable.Fields[i].ForeignKey.Table.Name + ' ORDER BY ' +
-        FTable.Fields[i].ForeignKey.Table.OrderBy);
-      while not db2.SQLQuery.EOF do
-        FComboBoxes[i].Items.AddObject(db2.GetValue(0), TObject(0));
-    end;
     FComboBoxes[i].Text := SelSchElem[i];
   end;
-  db1.Free; db1 := nil;
-  db2.Free; db2 := nil;
   if ACardType = ctDeletion then begin
     DelBtn := TButton.Create(Self);
     with DelBtn do begin
@@ -237,6 +226,18 @@ begin
       OnClick := @DelBtnClick;
     end;
   end;
+  if ACardType = ctUpdating then begin
+    UpdateBtn := TButton.Create(Self);
+    with UpdateBtn do begin
+      Parent := Self;
+      Width := 80;
+      Height := BtnHeight;
+      Top := EditCardForm.Height - BtnHeight - BtnOffset;
+      Left := EditCardForm.Width - Width - BtnOffset;
+      Caption := ' Сохранить ';
+      OnClick := @UpdateBtnClick;
+    end;
+  end;
 end;
 
 procedure TSelData.DelBtnClick(Sender: TObject);
@@ -247,12 +248,49 @@ begin
   Table := Tables[TableNum];
   db := TMyDBTools.Create(Self, TableNum);
   with db.SQLQuery do begin
-    Active := False;
-    SQL.Clear;
+    Active := False; SQL.Clear;
     SQL.Text := 'DELETE FROM ' + Table.en + ' WHERE ' + Table.Fields[0].en +
       ' = ' + ID;
   end;
   db.SQLQuery.ExecSQL;   db.Free; db := nil;
+  SQLTransaction_.Commit;
+  ScheduleTable.Show;
+  SetLength(SelSchElem, 0);
+  (Parent as TEditCard).Close;
+end;
+
+procedure TSelData.UpdateBtnClick(Sender: TObject);
+var
+  i: integer;
+  Lim, Val: string;
+  db: TMyDBTools;
+  Table: TTable;
+begin
+  Table := Tables[TableNum];
+  Lim := FEngName[0] + ' = :param0';
+  for i := 1 to High(FEngName) do
+    Lim := Lim + ', ' + FEngName[i] + ' = :param' + IntToStr(i);
+  db := TMyDBTools.Create(Self, TableNum);
+  with db.SQLQuery do begin
+    Active := False;
+    Close;
+    SQL.Text := 'UPDATE ' + Table.en + ' SET ' + Lim + ' WHERE ' +
+      Table.Fields[0].en + ' = ' + ID;
+  end;
+  for i := 0 to High(FComboBoxes) do begin
+    Case Table.TableType of
+      tCascade, tMarker, tUnChange: begin
+        if FComboBoxes[i] <> nil then
+          Val := FComboBoxes[i].Text;
+        {if FLabel[i] <> nil then
+          Val := Fields[i].EditVal.Text;}
+      end;
+      tJoin: Val := FPossibleList[i][FComboBoxes[i].ItemIndex];
+    end;
+    db.SQLQuery.ParamByName('param' + IntToStr(i)).AsString := Val;
+  end;
+  ShowMessage(db.SQLQuery.SQL.Text);
+  db.SQLQuery.ExecSQL;
   SQLTransaction_.Commit;
   ScheduleTable.Show;
   SetLength(SelSchElem, 0);

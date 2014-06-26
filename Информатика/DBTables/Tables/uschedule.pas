@@ -26,8 +26,6 @@ type
 
     L_Horizontal,
     L_Vertical: TLabel;
-    CB_Horz,
-    CB_Vert: TComboBox;
     ShowBtn: TButton;
 
     ScheduleGrid: TDrawGrid;
@@ -41,7 +39,7 @@ type
     CurPos: TPoint;
     AddBtn,
     DelBtn,
-    ChangeBtn: TButton;
+    UpdateBtn: TButton;
     procedure ChangeIndicate(Sender: TObject);
     procedure CheckClick(Sender: TObject);
     procedure PreferClick(Sender: TObject);
@@ -59,7 +57,10 @@ type
     procedure FreeEditBtn();
     procedure AddElem(Sender: TObject);
     procedure DelElem(Sender: TObject);
+    procedure UpdateElem(Sender: TObject);
   public
+    CB_Horz,
+    CB_Vert: TComboBox;
     ScheduleMatrix: array of array of array of TScheduleElem;
     ShowElemOfCell: array of array of boolean;
     DBTools: TMyDBTools;
@@ -193,14 +194,15 @@ begin
     Caption := ' - ';
     OnClick := @DelElem;
   end;
-  ChangeBtn := TButton.Create(ScheduleGrid);
-  with ChangeBtn do begin
+  UpdateBtn := TButton.Create(ScheduleGrid);
+  with UpdateBtn do begin
     Parent := ScheduleGrid;
     Height := side;
     Width := side;
     Top := DelBtn.Top + side;
     Left := AddBtn.Left;
     Caption := ' ! ';
+    OnClick := @UpdateElem;
   end;
 end;
 
@@ -212,7 +214,6 @@ end;
 procedure TScheduleTable.DelElem(Sender: TObject);
 var
   Col, Row, i: integer;
-  str : string;
 begin
   ScheduleGrid.MouseToCell(CurPos.X, CurPos.Y, Col, Row);
   ID := ScheduleMatrix[Col][Row][OrderInCell].ID;
@@ -226,11 +227,27 @@ begin
   EditCardForm.Show(9, ctDeletion);
 end;
 
+procedure TScheduleTable.UpdateElem(Sender: TObject);
+var
+  Col, Row, i: integer;
+begin
+  ScheduleGrid.MouseToCell(CurPos.X, CurPos.Y, Col, Row);
+  ID := ScheduleMatrix[Col][Row][OrderInCell].ID;
+  SetLength(SelSchElem, 0);
+  for i := 0 to High(ScheduleMatrix[Col][Row][OrderInCell].SchElemField) do
+  begin
+    SetLength(SelSchElem, Length(SelSchElem) + 1);
+    SelSchElem[High(SelSchElem)] :=
+      ScheduleMatrix[Col][Row][OrderInCell].SchElemField[i];
+  end;
+  EditCardForm.Show(9, ctUpdating);
+end;
+
 procedure TScheduleTable.FreeEditBtn();
 begin
   AddBtn.Free;
   DelBtn.Free;
-  ChangeBtn.Free;
+  UpdateBtn.Free;
 end;
 
 procedure TScheduleTable.CreateSectionPanel();

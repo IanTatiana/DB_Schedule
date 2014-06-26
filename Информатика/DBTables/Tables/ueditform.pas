@@ -217,7 +217,7 @@ begin
     end;
     DBTools.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
-  ShowMessage(DBTools.SQLQuery.SQL.Text);
+  //ShowMessage(DBTools.SQLQuery.SQL.Text);
   DBTools.SQLQuery.ExecSQL;
   SQLTransaction_.Commit;
   Close;

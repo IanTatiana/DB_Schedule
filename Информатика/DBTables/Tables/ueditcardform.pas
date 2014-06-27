@@ -57,10 +57,10 @@ type
 
 var
   EditCardForm: TEditCard;
+  CallingForm: TForm;
   TableNum: integer;
   SelSchElem: array of string;
   ID: string;
-  CurForm: ^TForm;
 
 implementation
 
@@ -336,10 +336,7 @@ end;
 
 procedure TEditCard.Close;
 begin
-  if Owner is TScheduleTable then
-    ScheduleTable.Show;
-  if Owner is TTableForm then
-    (Parent as TTableForm).Show;
+  CallingForm.Show;
   inherited Close;
 end;
 

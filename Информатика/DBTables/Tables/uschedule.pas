@@ -71,7 +71,6 @@ type
     procedure ShowSchedule(Sender: TObject);
     procedure UpdateScheduleGrid();
     procedure FillScheduleMatrix();
-    procedure Selection();
     procedure Show;
   end;
 
@@ -117,7 +116,6 @@ begin
   end;
   EditCardForm.Free; EditCardForm := nil;
   EditCardForm := TEditCard.CreateNew(Self, Num);
-  CurForm := @ScheduleTable;
   ShowSchedule(Self);
 end;
 
@@ -207,6 +205,7 @@ end;
 
 procedure TScheduleTable.AddElem(Sender: TObject);
 begin
+  CallingForm := Self as TScheduleTable;
   EditCardForm.Show(9, ctAddition);
 end;
 
@@ -228,12 +227,14 @@ end;
 procedure TScheduleTable.DelElem(Sender: TObject);
 begin
   InitSelectedData();
+  CallingForm := Self as TScheduleTable;
   EditCardForm.Show(9, ctDeletion);
 end;
 
 procedure TScheduleTable.UpdateElem(Sender: TObject);
 begin
   InitSelectedData();
+  CallingForm := Self as TScheduleTable;
   EditCardForm.Show(9, ctUpdating);
 end;
 
@@ -508,12 +509,6 @@ begin
     end;
   end;
   ScheduleGrid.Invalidate;
-end;
-
-procedure TScheduleTable.Selection();
-begin
-  //
-  //sche
 end;
 
 procedure TScheduleTable.SetCellHeight(aRow, r: integer);

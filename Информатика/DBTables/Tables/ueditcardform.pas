@@ -15,12 +15,14 @@ type
   protected
     FLabel: array of TLabel;
     FComboBoxes: array of TComboBox;
+    FEdits: array of TEdit;
     FEngName: array of string;
     FTable: TTable;
     FCardType: TCardType;
-
+    CancelBtn: TButton;
     //  Список возможных значений для одной ячейки в отсортированном порядке
     FPossibleList: array of array of string;
+    procedure CancelBtnClick(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -29,8 +31,8 @@ type
   TAddPanel = class(TEditPanel)
   protected
     AddBtn: TButton;
-  public
     procedure AddBtnClick(Sender: TObject);
+  public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
@@ -72,6 +74,9 @@ constructor TEditPanel.Create(AOwner: TComponent);
 var
   i: integer;
   db1: TMyDBTools;
+const
+  BtnOffset = 16;
+  BtnHeight = 32;
 begin
   inherited Create(AOwner);
   FTable := Tables[TableNum];
@@ -93,6 +98,22 @@ begin
     db1.ExecuteQuery('SELECT ' + FTable.FieldsList() +
       ' FROM ' + FTable.JoinName);
     SetLength(FComboBoxes, Length(FComboBoxes) + 1);
+    SetLength(FEdits, Length(FEdits) + 1);
+    if(FTable.Fields[i].ForeignKey.Table.Name = UTables.null) and
+      (FTable.Fields[i].DateType = int) then
+    begin
+      db1.DataSource.DataSet.First;
+      FEdits[High(FEdits)] := TEdit.Create(AOwner);
+      with FEdits[High(FEdits)] do begin
+        Parent := Self;
+        Left := 120;
+        Height := 24;
+        Width := 200;
+        Top := i * 16 + (i - 1) * Height;
+        Text := db1.DataSource.DataSet.Fields[i].AsString;
+      end;
+      Continue;
+    end;
     FComboBoxes[High(FComboBoxes)] := TComboBox.Create(Self);
     with FComboBoxes[High(FComboBoxes)] do begin
       Parent :=Self;
@@ -120,6 +141,21 @@ begin
     end;
   end;
   db1.Free; db1 := nil;
+  CancelBtn := TButton.Create(Self);
+  with CancelBtn do begin
+    Parent := Self;
+    Width := 80;
+    Height := BtnHeight;
+    Top := EditCardForm.Height - BtnHeight - BtnOffset;
+    Left := EditCardForm.Width - Width - BtnOffset ;
+    Caption := 'Отмена';
+    OnClick := @CancelBtnClick;
+  end;
+end;
+
+procedure TEditPanel.CancelBtnClick(Sender: TObject);
+begin
+  (Parent as TEditCard).Close;
 end;
 
 destructor TEditPanel.Destroy;
@@ -153,7 +189,7 @@ begin
     Width := 80;
     Height := BtnHeight;
     Top := EditCardForm.Height - BtnHeight - BtnOffset;
-    Left := EditCardForm.Width - Width - BtnOffset;
+    Left := EditCardForm.Width - 2*Width - BtnOffset;
     Caption := 'Добавить';
     OnClick := @AddBtnClick;
   end;
@@ -185,8 +221,8 @@ begin
       tCascade, tMarker: begin
         if FComboBoxes[i] <> nil then
           Val := FComboBoxes[i].Text;
-        {if F <> nil then
-          Val := Fields[i].EditVal.Text;}
+        if FEdits[i] <> nil then
+          Val := FEdits[i].Text;
       end;
       tJoin: begin
         Val := FPossibleList[i][FComboBoxes[i].ItemIndex];
@@ -215,8 +251,10 @@ const
 begin
   inherited Create(AOwner);
   for i := 0 to High(FComboBoxes) do begin
-    FComboBoxes[i].Style := csDropDownList;
-    FComboBoxes[i].Text := SelSchElem[i];
+    if FComboBoxes[i] <> nil then begin
+      FComboBoxes[i].Style := csDropDownList;
+      FComboBoxes[i].Text := SelSchElem[i];
+    end;
   end;
   if ACardType = ctDeletion then begin
     DelBtn := TButton.Create(Self);
@@ -225,7 +263,7 @@ begin
       Width := 80;
       Height := BtnHeight;
       Top := EditCardForm.Height - BtnHeight - BtnOffset;
-      Left := EditCardForm.Width - Width - BtnOffset;
+      Left := EditCardForm.Width - 2*Width - BtnOffset;
       Caption := ' Удалить ';
       OnClick := @DelBtnClick;
     end;
@@ -237,7 +275,7 @@ begin
       Width := 80;
       Height := BtnHeight;
       Top := EditCardForm.Height - BtnHeight - BtnOffset;
-      Left := EditCardForm.Width - Width - BtnOffset;
+      Left := EditCardForm.Width - 2*Width - BtnOffset;
       Caption := ' Сохранить ';
       OnClick := @UpdateBtnClick;
     end;
@@ -263,7 +301,7 @@ begin
     SQL.Text := 'DELETE FROM ' + Table.en + ' WHERE ' + Table.Fields[0].en +
       ' = ' + ID;
   end;
-  db.SQLQuery.ExecSQL;   db.Free; db := nil;
+  db.SQLQuery.ExecSQL; db.Free; db := nil;
   SQLTransaction_.Commit;
   SetLength(SelSchElem, 0);
   (Parent as TEditCard).Close;
@@ -291,14 +329,14 @@ begin
       tCascade, tMarker, tUnChange: begin
         if FComboBoxes[i] <> nil then
           Val := FComboBoxes[i].Text;
-        {if FLabel[i] <> nil then
-          Val := Fields[i].EditVal.Text;}
+        if FEdits[i] <> nil then
+          Val := FEdits[i].Text;
       end;
       tJoin: Val := FPossibleList[i][FComboBoxes[i].ItemIndex];
     end;
     db.SQLQuery.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
-  db.SQLQuery.ExecSQL;
+  db.SQLQuery.ExecSQL; db.Free; db := nil;
   SQLTransaction_.Commit;
   (Parent as TEditCard).Close;
 end;

@@ -223,19 +223,18 @@ begin
     SelSchElem[High(SelSchElem)] :=
       ScheduleMatrix[Col][Row][OrderInCell].SchElemField[i];
   end;
+  CallingForm := Self as TScheduleTable;
 end;
 
 procedure TScheduleTable.DelElem(Sender: TObject);
 begin
   InitSelectedData();
-  CallingForm := Self as TScheduleTable;
   EditCardForm.Show(9, ctDeletion);
 end;
 
 procedure TScheduleTable.UpdateElem(Sender: TObject);
 begin
   InitSelectedData();
-  CallingForm := Self as TScheduleTable;
   EditCardForm.Show(9, ctUpdating);
 end;
 

@@ -115,26 +115,24 @@ begin
     SelSchElem[High(SelSchElem)] := DBGrids.Columns[i].Field.Text;
   end;
   ID := DBTools.DataSource.DataSet.Fields[0].Value;
+  CallingForm := Self as TTableForm;
 end;
 
 procedure TTableForm.UpdateBtnClick(Sender: TObject);
 begin
   InitData();
-  CallingForm := Self as TTableForm;
   EditCardForm.Show(TableNum, ctUpdating);
 end;
 
 procedure TTableForm.DelBtnClick(Sender: TObject);
 begin
   InitData();
-  CallingForm := Self as TTableForm;
   EditCardForm.Show(TableNum, ctDeletion);
 end;
 
 procedure TTableForm.AddBtnClick(Sender: TObject);
 begin
   InitData();
-  CallingForm := Self as TTableForm;
   EditCardForm.Show(TableNum, ctAddition);
 end;
 

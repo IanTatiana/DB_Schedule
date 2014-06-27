@@ -61,7 +61,6 @@ begin
     DataSource := DBTools.DataSource;
     OnDblClick := @GridDblClick;
   end;
-
   DBTools.ExecuteQuery('SELECT ' + Table.FieldsList() + ' FROM ' +
     Table.JoinName);
   Russification;

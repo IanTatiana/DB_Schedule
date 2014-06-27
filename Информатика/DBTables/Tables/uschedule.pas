@@ -119,10 +119,10 @@ begin
   ShowSchedule(Self);
 end;
 
-procedure TScheduleTable.Show();
+procedure TScheduleTable.Show;
 begin
-  inherited Show;
   ShowSchedule(Self);
+  inherited Show;
 end;
 
 procedure TScheduleTable.DrawGridDblClick(Sender: TObject);
@@ -206,6 +206,7 @@ end;
 procedure TScheduleTable.AddElem(Sender: TObject);
 begin
   CallingForm := Self as TScheduleTable;
+  CallingForm.OnShow := @ShowSchedule;
   EditCardForm.Show(9, ctAddition);
 end;
 

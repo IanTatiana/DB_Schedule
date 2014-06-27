@@ -170,9 +170,7 @@ var
   i: integer;
   Lim, Val: string;
   db: TMyDBTools;
-  str: string; //
 begin
-  str := '';
   db := TMyDBTools.Create(Self, TableNum);
   Lim := ' NEXT VALUE FOR ' + FTable.GenName;
   for i := 0 to High(FComboBoxes) do
@@ -198,10 +196,8 @@ begin
         Exit;
       end;
     end;
-    str := str + IntToStr(i) + ') ' + Val + #10#13;
     db.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
-  //ShowMessage(str);
   db.SQLQuery.ExecSQL; db.Free; db := nil;
   SQLTransaction_.Commit;
   SetLength(SelSchElem, 0);
@@ -286,8 +282,7 @@ begin
     Lim := Lim + ', ' + FEngName[i] + ' = :param' + IntToStr(i);
   db := TMyDBTools.Create(Self, TableNum);
   with db.SQLQuery do begin
-    Active := False;
-    Close;
+    Active := False; Close;
     SQL.Text := 'UPDATE ' + Table.en + ' SET ' + Lim + ' WHERE ' +
       Table.Fields[0].en + ' = ' + ID;
   end;
@@ -305,7 +300,6 @@ begin
   end;
   db.SQLQuery.ExecSQL;
   SQLTransaction_.Commit;
-  SetLength(SelSchElem, 0);
   (Parent as TEditCard).Close;
 end;
 
@@ -336,7 +330,11 @@ end;
 
 procedure TEditCard.Close;
 begin
-  CallingForm.Show;
+  SetLength(SelSchElem, 0);
+  if CallingForm is TScheduleTable then
+    ScheduleTable.ShowSchedule(Self);
+  if CallingForm is TTableForm then
+    CallingForm.Show;
   inherited Close;
 end;
 

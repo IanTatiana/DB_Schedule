@@ -7,7 +7,7 @@ interface
 uses
   types, Classes, SysUtils, Forms, Grids, ExtCtrls, UTables, SQLdb,
   IBConnection, db, Dialogs, UMyDBTools, StdCtrls, Graphics, Controls,
-  UFilter, UEditCardForm;
+  UFilter, UEditCardForm, UConflictsForm;
 
 type
   TScheduleElem =  record
@@ -39,6 +39,9 @@ type
     DG_DblClick: boolean;
     OrderInCell: integer;
     CurPos: TPoint;
+    ConflictsLabel: TLabel;
+    ConflictsPanel: TPanel;
+    ConflictsBtn: TButton;
     AddBtn,
     DelBtn,
     UpdateBtn: TButton;
@@ -61,6 +64,7 @@ type
     procedure AddElem(Sender: TObject);
     procedure DelElem(Sender: TObject);
     procedure UpdateElem(Sender: TObject);
+    procedure ShowConflicts(Sender: TObject);
   public
     ScheduleMatrix: array of array of array of TScheduleElem;
     ShowElemOfCell: array of array of boolean;
@@ -114,7 +118,7 @@ begin
     OnDblClick := @DrawGridDblClick;
     OnMouseMove:= @DrawGridMouseMove;
   end;
-  EditCardForm.Free; EditCardForm := nil;
+  FreeAndNil(EditCardForm);
   EditCardForm := TEditCard.CreateNew(Self, Num);
   ShowSchedule(Self);
 end;
@@ -366,7 +370,7 @@ var
 begin
   PreferPanel := TPanel.Create(ToolsPanel);
   with PreferPanel do begin
-    Height := ToolsPanel.Height;
+    Height := ToolsPanel.Height div 2;
     Left := CheckPanel.Left + CheckPanel.Width;
     Width := 300;
     Parent := ToolsPanel;
@@ -391,6 +395,36 @@ begin
     OnClick := @ShowAllClick;
   end;
   ShowAll := False;
+  ConflictsPanel := TPanel.Create(ToolsPanel);
+  ConflictsLabel := TLabel.Create(ConflictsPanel);
+  with ConflictsLabel do begin
+    Top := 8;
+    Left := 18;
+    Caption := 'Конфликты';
+    Parent := ConflictsPanel;
+  end;
+  with ConflictsPanel do begin
+    Height := ToolsPanel.Height div 2;
+    Width := PreferPanel.Width;
+    Top := Height;
+    Left := PreferPanel.Left;
+    Parent := ToolsPanel;
+  end;
+  ConflictsBtn := TButton.Create(ConflictsPanel);
+  with ConflictsBtn do begin
+    Height := 28;
+    Width := 100;
+    Parent := ConflictsPanel;
+    Top := 24;
+    Left := 18;
+    Caption := 'Посмотреть';
+    OnClick := @ShowConflicts;
+  end;
+end;
+
+procedure TScheduleTable.ShowConflicts(Sender: TObject);
+begin
+  ConflictsForm.Show;
 end;
 
 procedure TScheduleTable.PreferClick(Sender: TObject);

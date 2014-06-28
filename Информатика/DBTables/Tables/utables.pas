@@ -36,6 +36,15 @@ type
   { TTable }
 
   TTable = class
+  protected
+    procedure AddSelectField(AName, ARusName: string; AWidth: integer;
+      ASortType: TSortType); overload;
+    procedure AddSelectField(AName, AOrderID, ARusName: string; AWidth: integer); overload;
+    procedure AddField(AVisible: boolean; AName: string;
+      ADataType: TDataType; AForeignKey: TForeignKey); overload;
+    procedure AddField(AVisible: boolean; AName: string;
+      ADataType: TDataType); overload;
+  public
     TableType: TTableType;
     Join: boolean;
     JoinName: string;
@@ -47,13 +56,6 @@ type
       ATableDelType: TTableType);
     function FieldsList(): string;
     function GetPossibleValue(AField: TField): String;
-    procedure AddSelectField(AName, ARusName: string; AWidth: integer;
-      ASortType: TSortType); overload;
-    procedure AddSelectField(AName, AOrderID, ARusName: string; AWidth: integer); overload;
-    procedure AddField(AVisible: boolean; AName: string;
-      ADataType: TDataType; AForeignKey: TForeignKey); overload;
-    procedure AddField(AVisible: boolean; AName: string;
-      ADataType: TDataType); overload;
   end;
 
   function ByName(AName: string): string;

@@ -1,4 +1,4 @@
-unit ueditcardform;
+unit UEditCardForm;
 
 {$mode objfpc}{$H+}
 
@@ -11,20 +11,25 @@ uses
 type
   TCardType = (ctAddition, ctDeletion, ctUpdating);
 
+  TFields = record
+    FLabel: TLabel;
+    FComboBox: TComboBox;
+    FEdit: TEdit;
+    FEngName: string;
+  end;
+
   TEditPanel = class(TPanel)
   protected
-    FLabel: array of TLabel;
-    FComboBoxes: array of TComboBox;
-    FEdits: array of TEdit;
-    FEngName: array of string;
+    FFields: array of TFields;
     FTable: TTable;
     FCardType: TCardType;
     CancelBtn: TButton;
+    TableNum: integer;
     //  Список возможных значений для одной ячейки в отсортированном порядке
     FPossibleList: array of array of string;
     procedure CancelBtnClick(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; Num: integer);
     destructor Destroy; override;
   end;
 
@@ -33,7 +38,7 @@ type
     AddBtn: TButton;
     procedure AddBtnClick(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent; Num: integer);
     destructor Destroy; override;
   end;
 
@@ -43,7 +48,7 @@ type
     procedure DelBtnClick(Sender: TObject);
     procedure UpdateBtnClick(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; ACardType: TCardType);
+    constructor Create(AOwner: TComponent; Num: integer; ACardType: TCardType);
     destructor Destroy; override;
   end;
 
@@ -51,6 +56,7 @@ type
   protected
     FCardType: TCardType;
     FEditPanel: TEditPanel;
+    TableNum: integer;
   public
     constructor CreateNew(AOwner: TComponent; Num: Integer=0); override;
     procedure Show(ANum: integer; ACardType: TCardType);
@@ -60,7 +66,6 @@ type
 var
   EditCardForm: TEditCard;
   CallingForm: TForm;
-  TableNum: integer;
   SelSchElem: array of string;
   ID: string;
 
@@ -70,7 +75,7 @@ uses
   USchedule, UTableForm;
 
 //----TEditPanel----------------------------------------------------------------
-constructor TEditPanel.Create(AOwner: TComponent);
+constructor TEditPanel.Create(AOwner: TComponent; Num: integer);
 var
   i: integer;
   db1: TMyDBTools;
@@ -79,16 +84,16 @@ const
   BtnHeight = 32;
 begin
   inherited Create(AOwner);
+  TableNum := Num;
   FTable := Tables[TableNum];
   db1 := TMyDBTools.Create(Self, TableNum);
   Align := alClient;
   for i := 1 to High(Tables[TableNum].SelectFields) do begin
-    SetLength(FEngName, Length(FEngName) + 1);
+    SetLength(FFields, Length(FFields) + 1);
     SetLength(FPossibleList, Length(FPossibleList) + 1);
-    FEngName[High(FEngName)] := FTable.Fields[i].en;
-    SetLength(FLabel, Length(FLabel) + 1);
-    FLabel[High(FLabel)] := TLabel.Create(Self);
-    with FLabel[High(FLabel)] do begin
+    FFields[High(FFields)].FEngName := FTable.Fields[i].en;
+    FFields[High(FFields)].FLabel := TLabel.Create(Self);
+    with FFields[High(FFields)].FLabel do begin
       Parent := Self;
       Caption := FTable.SelectFields[i].ru;
       Left := 8;
@@ -97,14 +102,12 @@ begin
     end;
     db1.ExecuteQuery('SELECT ' + FTable.FieldsList() +
       ' FROM ' + FTable.JoinName);
-    SetLength(FComboBoxes, Length(FComboBoxes) + 1);
-    SetLength(FEdits, Length(FEdits) + 1);
     if(FTable.Fields[i].ForeignKey.Table.Name = UTables.null) and
       (FTable.Fields[i].DateType = int) then
     begin
       db1.DataSource.DataSet.First;
-      FEdits[High(FEdits)] := TEdit.Create(AOwner);
-      with FEdits[High(FEdits)] do begin
+      FFields[High(FFields)].FEdit := TEdit.Create(AOwner);
+      with FFields[High(FFields)].FEdit do begin
         Parent := Self;
         Left := 120;
         Height := 24;
@@ -114,8 +117,8 @@ begin
       end;
       Continue;
     end;
-    FComboBoxes[High(FComboBoxes)] := TComboBox.Create(Self);
-    with FComboBoxes[High(FComboBoxes)] do begin
+    FFields[High(FFields)].FComboBox := TComboBox.Create(Self);
+    with FFields[High(FFields)].FComboBox do begin
       Parent :=Self;
       Left := 120;
       Height := 24;
@@ -162,27 +165,31 @@ destructor TEditPanel.Destroy;
 var
   i: integer;
 begin
-  for i := 0 to High(FLabel) do begin
-    FLabel[i].Free; FLabel[i] := nil;
-    FComboBoxes[i].Free; FComboBoxes[i] := nil;
+  for i := 0 to High(FFields) do begin
+    FFields[i].FComboBox.Free; FFields[i].FComboBox := nil;
+    FFields[i].FEdit.Free; FFields[i].FEdit := nil;
   end;
-  SetLength(FLabel, 0);
-  SetLength(FComboBoxes, 0);
+  SetLength(FFields, 0);
   FTable := nil;
   inherited Destroy;
 end;
 
 //----TAddPanel-----------------------------------------------------------------
-constructor TAddPanel.Create(AOwner: TComponent);
+constructor TAddPanel.Create(AOwner: TComponent; Num: integer);
 var
   i: integer;
 const
   BtnOffset = 16;
   BtnHeight = 32;
 begin
-  inherited Create(AOwner);
-  for i := 0 to High(FComboBoxes) do
-    FComboBoxes[i].Text := 'Выбрать из списка...';
+  inherited Create(AOwner, Num);
+  for i := 0 to High(FFields) do begin
+    if FFields[i].FComboBox <> nil then begin
+      FFields[i].FComboBox.Text := 'Выбрать из списка...';
+    end;
+    if FFields[i].FEdit <> nil then
+      FFields[i].FEdit.Text := '';
+  end;
   AddBtn := TButton.Create(Self);
   with AddBtn do begin
     Parent := Self;
@@ -209,23 +216,23 @@ var
 begin
   db := TMyDBTools.Create(Self, TableNum);
   Lim := ' NEXT VALUE FOR ' + FTable.GenName;
-  for i := 0 to High(FComboBoxes) do
+  for i := 0 to High(FFields) do
     Lim := Lim + ', :param' + IntToStr(i);
   with db.SQLQuery do begin
     Active := False;
     Close;
     SQL.Text := 'INSERT INTO ' + FTable.en + ' VALUES(' + Lim + ' );';
   end;
-  for i := 0 to High(FComboBoxes) do begin
+  for i := 0 to High(FFields) do begin
     Case FTable.TableType of
       tCascade, tMarker: begin
-        if FComboBoxes[i] <> nil then
-          Val := FComboBoxes[i].Text;
-        if FEdits[i] <> nil then
-          Val := FEdits[i].Text;
+        if FFields[i].FComboBox <> nil then
+          Val := FFields[i].FComboBox.Text;
+        if FFields[i].FEdit <> nil then
+          Val := FFields[i].FEdit.Text;
       end;
       tJoin: begin
-        Val := FPossibleList[i][FComboBoxes[i].ItemIndex];
+        Val := FPossibleList[i][FFields[i].FComboBox.ItemIndex];
       end;
       tUnChange: begin
         ShowMessage('Данная таблица не подлежит редактированию!');
@@ -241,7 +248,8 @@ begin
 end;
 
 //----TSelData------------------------------------------------------------------
-constructor TSelData.Create(AOwner: TComponent; ACardType: TCardType);
+constructor TSelData.Create(
+  AOwner: TComponent; Num: integer; ACardType: TCardType);
 var
   i: integer;
   db1, db2: TMyDBTools;
@@ -249,11 +257,11 @@ const
   BtnOffset = 16;
   BtnHeight = 32;
 begin
-  inherited Create(AOwner);
-  for i := 0 to High(FComboBoxes) do begin
-    if FComboBoxes[i] <> nil then begin
-      FComboBoxes[i].Style := csDropDownList;
-      FComboBoxes[i].Text := SelSchElem[i];
+  inherited Create(AOwner, Num);
+  for i := 0 to High(FFields) do begin
+    if FFields[i].FComboBox <> nil then begin
+      FFields[i].FComboBox.Style := csDropDownList;
+      FFields[i].FComboBox.Text := SelSchElem[i];
     end;
   end;
   if ACardType = ctDeletion then begin
@@ -315,24 +323,24 @@ var
   Table: TTable;
 begin
   Table := Tables[TableNum];
-  Lim := FEngName[0] + ' = :param0';
-  for i := 1 to High(FEngName) do
-    Lim := Lim + ', ' + FEngName[i] + ' = :param' + IntToStr(i);
+  Lim := FFields[0].FEngName + ' = :param0';
+  for i := 1 to High(FFields) do
+    Lim := Lim + ', ' + FFields[i].FEngName + ' = :param' + IntToStr(i);
   db := TMyDBTools.Create(Self, TableNum);
   with db.SQLQuery do begin
     Active := False; Close;
     SQL.Text := 'UPDATE ' + Table.en + ' SET ' + Lim + ' WHERE ' +
       Table.Fields[0].en + ' = ' + ID;
   end;
-  for i := 0 to High(FComboBoxes) do begin
+  for i := 0 to High(FFields) do begin
     Case Table.TableType of
       tCascade, tMarker, tUnChange: begin
-        if FComboBoxes[i] <> nil then
-          Val := FComboBoxes[i].Text;
-        if FEdits[i] <> nil then
-          Val := FEdits[i].Text;
+        if FFields[i].FComboBox <> nil then
+          Val := FFields[i].FComboBox.Text;
+        if FFields[i].FEdit <> nil then
+          Val := FFields[i].FEdit.Text;
       end;
-      tJoin: Val := FPossibleList[i][FComboBoxes[i].ItemIndex];
+      tJoin: Val := FPossibleList[i][FFields[i].FComboBox.ItemIndex];
     end;
     db.SQLQuery.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
@@ -351,17 +359,15 @@ begin
   Position := poScreenCenter;
   BorderIcons := BorderIcons - [biMaximize];
   BorderStyle := BorderStyle.bsSingle;
-  TableNum := Num;
 end;
 
 procedure TEditCard.Show(ANum: integer; ACardType: TCardType);
 begin
-  TableNum := ANum;
   FEditPanel.Free; FEditPanel := nil;
   if ACardType = ctAddition then
-    FEditPanel := TAddPanel.Create(Self)
+    FEditPanel := TAddPanel.Create(Self, ANum)
   else
-    FEditPanel := TSelData.Create(Self, ACardType);
+    FEditPanel := TSelData.Create(Self, ANum, ACardType);
   FEditPanel.Parent := Self;
   inherited Show;
 end;

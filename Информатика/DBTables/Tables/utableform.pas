@@ -12,6 +12,7 @@ type
   TTableForm = class(TForm)
   protected
     Table: TTable;
+    TableNum: integer;
     EditCardBtnPanel: TPanel;
     FilterPanel: TFilterPanel;
     DBTools: TMyDBTools;

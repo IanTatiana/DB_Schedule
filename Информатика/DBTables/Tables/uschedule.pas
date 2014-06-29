@@ -72,6 +72,7 @@ type
     constructor CreateNew(AOwner: TComponent; Num: Integer=0); override;
     function GetCountFrom(idx: integer): integer;
     function GetFieldName(AFieldName: string): string;
+    procedure CloseCard(Sender: TObject; var CanClose: TCloseAction);
     procedure ShowSchedule(Sender: TObject);
     procedure UpdateScheduleGrid();
     procedure FillScheduleMatrix();
@@ -83,6 +84,7 @@ const
   RHeight_h = 48;
   CWidth = 380;
   RHeight = 110;
+
 var
   ScheduleTable: TScheduleTable;
 
@@ -227,7 +229,7 @@ begin
     SelSchElem[High(SelSchElem)] :=
       ScheduleMatrix[Col][Row][OrderInCell].SchElemField[i];
   end;
-  CallingForm := Self as TScheduleTable;
+  EditCardForm.OnClose := @CloseCard;
 end;
 
 procedure TScheduleTable.DelElem(Sender: TObject);
@@ -319,6 +321,11 @@ begin
     Left := ShowBtn.Left + ShowBtn.Width + indent;
     Picture.LoadFromFile('yes.png');
   end;
+end;
+
+procedure TScheduleTable.CloseCard(Sender: TObject; var CanClose: TCloseAction);
+begin
+  ScheduleTable.ShowSchedule(Self);
 end;
 
 procedure TScheduleTable.ChangeIndicate(Sender: TObject);

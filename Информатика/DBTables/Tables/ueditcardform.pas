@@ -25,7 +25,6 @@ type
     FCardType: TCardType;
     CancelBtn: TButton;
     TableNum: integer;
-    //  Список возможных значений для одной ячейки в отсортированном порядке
     FPossibleList: array of array of string;
     procedure CancelBtnClick(Sender: TObject);
   public
@@ -33,7 +32,7 @@ type
     destructor Destroy; override;
   end;
 
-  TAddPanel = class(TEditPanel)
+  TAddNewDataPanel = class(TEditPanel)
   protected
     AddBtn: TButton;
     procedure AddBtnClick(Sender: TObject);
@@ -42,14 +41,26 @@ type
     destructor Destroy; override;
   end;
 
-  TSelData = class(TEditPanel)
+  TEditOldDataPanel = class(TEditPanel)
+    constructor Create(AOwner: TComponent; Num: integer);
+  end;
+
+  TDelDataPanel = class(TEditOldDataPanel)
   protected
-    DelBtn, UpdateBtn: TButton;
+    DelBtn: TButton;
     procedure DelBtnClick(Sender: TObject);
+  public
+    destructor Destroy; override;
+    constructor Create(AOwner: TComponent; Num: integer);
+  end;
+
+  TUpdateDataPanel = class(TEditOldDataPanel)
+  protected
+    UpdateBtn: TButton;
     procedure UpdateBtnClick(Sender: TObject);
   public
-    constructor Create(AOwner: TComponent; Num: integer; ACardType: TCardType);
     destructor Destroy; override;
+    constructor Create(AOwner: TComponent; Num: integer);
   end;
 
   TEditCard = class(TForm)
@@ -60,7 +71,6 @@ type
   public
     constructor CreateNew(AOwner: TComponent; Num: Integer=0); override;
     procedure Show(ANum: integer; ACardType: TCardType);
-    procedure Close;
   end;
 
 var
@@ -143,7 +153,7 @@ begin
       end;
     end;
   end;
-  db1.Free; db1 := nil;
+  db1.Free;
   CancelBtn := TButton.Create(Self);
   with CancelBtn do begin
     Parent := Self;
@@ -174,8 +184,8 @@ begin
   inherited Destroy;
 end;
 
-//----TAddPanel-----------------------------------------------------------------
-constructor TAddPanel.Create(AOwner: TComponent; Num: integer);
+//----TAddNewDataPanel----------------------------------------------------------
+constructor TAddNewDataPanel.Create(AOwner: TComponent; Num: integer);
 var
   i: integer;
 const
@@ -202,13 +212,13 @@ begin
   end;
 end;
 
-destructor TAddPanel.Destroy;
+destructor TAddNewDataPanel.Destroy;
 begin
   AddBtn.Free; AddBtn := nil;
   inherited Destroy;
 end;
 
-procedure TAddPanel.AddBtnClick(Sender: TObject);
+procedure TAddNewDataPanel.AddBtnClick(Sender: TObject);
 var
   i: integer;
   Lim, Val: string;
@@ -241,18 +251,16 @@ begin
     end;
     db.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString := Val;
   end;
-  db.SQLQuery.ExecSQL; db.Free; db := nil;
+  db.SQLQuery.ExecSQL; db.Free;
   SQLTransaction_.Commit;
   SetLength(SelSchElem, 0);
   (Parent as TEditCard).Close;
 end;
 
-//----TSelData------------------------------------------------------------------
-constructor TSelData.Create(
-  AOwner: TComponent; Num: integer; ACardType: TCardType);
+//----TEditOldDataPanel---------------------------------------------------------
+constructor TEditOldDataPanel.Create(AOwner: TComponent; Num: integer);
 var
   i: integer;
-  db1, db2: TMyDBTools;
 const
   BtnOffset = 16;
   BtnHeight = 32;
@@ -264,40 +272,28 @@ begin
       FFields[i].FComboBox.Text := SelSchElem[i];
     end;
   end;
-  if ACardType = ctDeletion then begin
-    DelBtn := TButton.Create(Self);
-    with DelBtn do begin
-      Parent := Self;
-      Width := 80;
-      Height := BtnHeight;
-      Top := EditCardForm.Height - BtnHeight - BtnOffset;
-      Left := EditCardForm.Width - 2*Width - BtnOffset;
-      Caption := ' Удалить ';
-      OnClick := @DelBtnClick;
-    end;
-  end;
-  if ACardType = ctUpdating then begin
-    UpdateBtn := TButton.Create(Self);
-    with UpdateBtn do begin
-      Parent := Self;
-      Width := 80;
-      Height := BtnHeight;
-      Top := EditCardForm.Height - BtnHeight - BtnOffset;
-      Left := EditCardForm.Width - 2*Width - BtnOffset;
-      Caption := ' Сохранить ';
-      OnClick := @UpdateBtnClick;
-    end;
-  end;
 end;
 
-destructor TSelData.Destroy;
+//----TDelDataPanel-------------------------------------------------------------
+constructor TDelDataPanel.Create(AOwner: TComponent; Num: integer);
+const
+  BtnOffset = 16;
+  BtnHeight = 32;
 begin
-  DelBtn.Free; DelBtn := nil;
-  UpdateBtn.Free; UpdateBtn := nil;
-  inherited Destroy;
+  inherited Create(AOwner, Num);
+  DelBtn := TButton.Create(Self);
+  with DelBtn do begin
+    Parent := Self;
+    Width := 80;
+    Height := BtnHeight;
+    Top := EditCardForm.Height - BtnHeight - BtnOffset;
+    Left := EditCardForm.Width - 2*Width - BtnOffset;
+    Caption := ' Удалить ';
+    OnClick := @DelBtnClick;
+  end;
 end;
 
-procedure TSelData.DelBtnClick(Sender: TObject);
+procedure TDelDataPanel.DelBtnClick(Sender: TObject);
 var
   db: TMyDBTools;
   Table: TTable;
@@ -315,7 +311,32 @@ begin
   (Parent as TEditCard).Close;
 end;
 
-procedure TSelData.UpdateBtnClick(Sender: TObject);
+destructor TDelDataPanel.Destroy;
+begin
+  FreeAndNil(DelBtn);
+  inherited Destroy;
+end;
+
+//----TUpdateDataPanel----------------------------------------------------------
+constructor TUpdateDataPanel.Create(AOwner: TComponent; Num: integer);
+const
+  BtnOffset = 16;
+  BtnHeight = 32;
+begin
+  inherited Create(AOwner, Num);
+  UpdateBtn := TButton.Create(Self);
+  with UpdateBtn do begin
+    Parent := Self;
+    Width := 80;
+    Height := BtnHeight;
+    Top := EditCardForm.Height - BtnHeight - BtnOffset;
+    Left := EditCardForm.Width - 2*Width - BtnOffset;
+    Caption := ' Сохранить ';
+    OnClick := @UpdateBtnClick;
+  end;
+end;
+
+procedure TUpdateDataPanel.UpdateBtnClick(Sender: TObject);
 var
   i: integer;
   Lim, Val: string;
@@ -349,6 +370,12 @@ begin
   (Parent as TEditCard).Close;
 end;
 
+destructor TUpdateDataPanel.Destroy;
+begin
+  FreeAndNil(UpdateBtn);
+  inherited Destroy;
+end;
+
 //----TEditCard-----------------------------------------------------------------
 constructor TEditCard.CreateNew(AOwner: TComponent; Num: Integer=0);
 begin
@@ -365,21 +392,13 @@ procedure TEditCard.Show(ANum: integer; ACardType: TCardType);
 begin
   FEditPanel.Free; FEditPanel := nil;
   if ACardType = ctAddition then
-    FEditPanel := TAddPanel.Create(Self, ANum)
-  else
-    FEditPanel := TSelData.Create(Self, ANum, ACardType);
+    FEditPanel := TAddNewDataPanel.Create(Self, ANum);
+  if ACardType = ctDeletion then
+    FEditPanel := TDelDataPanel.Create(Self, ANum);
+  if ACardType = ctUpdating then
+    FEditPanel := TUpdateDataPanel.Create(Self, ANum);
   FEditPanel.Parent := Self;
   inherited Show;
-end;
-
-procedure TEditCard.Close;
-begin
-  SetLength(SelSchElem, 0);
-  if CallingForm is TScheduleTable then
-    ScheduleTable.ShowSchedule(Self);
-  if CallingForm is TTableForm then
-    CallingForm.Show;
-  inherited Close;
 end;
 
 end.

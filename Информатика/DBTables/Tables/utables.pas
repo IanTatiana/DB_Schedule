@@ -9,6 +9,7 @@ uses
 
 type
   TDataType = (int, varchar, date);
+
   TForeignTable = record
     Name: string;
     OrderBy: string;

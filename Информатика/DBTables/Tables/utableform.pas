@@ -26,8 +26,6 @@ type
     constructor CreateNew(AOwner: TComponent; Num: Integer=0);
     procedure Activate; override;
     procedure GridDblClick(Sender: TObject);
-    procedure Show;
-    procedure CloseCard(Sender: TObject; var CanClose: TCloseAction);
     procedure Russification;
   end;
 
@@ -105,7 +103,6 @@ begin
   end;
   EditCardForm.Free; EditCardForm := nil;
   EditCardForm := TEditCard.CreateNew(Self, Num);
-  //EditCardForm.OnClose := @CloseCard;
 end;
 
 procedure TTableForm.InitData();
@@ -149,17 +146,6 @@ end;
 procedure TTableForm.GridDblClick(Sender: TObject);
 begin
   UpdateBtnClick(Sender);
-end;
-
-procedure TTableForm.CloseCard(Sender: TObject; var CanClose: TCloseAction);
-begin
-  //Russification;
-end;
-
-procedure TTableForm.Show();
-begin
-  Russification;
-  inherited Show;
 end;
 
 end.

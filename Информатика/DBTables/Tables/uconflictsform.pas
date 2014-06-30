@@ -9,7 +9,6 @@ uses
   UTables;
 
 type
-
   { TConflictForm }
 
   TConflictForm = class(TForm)
@@ -17,13 +16,9 @@ type
     procedure ConflictTreeGetSelectedIndex(Sender: TObject; Node: TTreeNode);
     procedure ConflictTreeSelectionChanged(Sender: TObject);
   private
-    { private declarations }
+    ConflictTable, ConflictListTable: TTable;
   public
-    { public declarations }
-  end;
-
-  TConflictTable = class(TTable)
-
+    constructor Create(TheOwner: TComponent); override;
   end;
 
 var
@@ -34,6 +29,11 @@ implementation
 {$R *.lfm}
 
 { TConflictForm }
+
+constructor TConflictForm.Create(TheOwner: TComponent);
+begin
+  inherited Create(TheOwner);
+end;
 
 procedure TConflictForm.ConflictTreeSelectionChanged(Sender: TObject);
 begin

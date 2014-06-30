@@ -62,6 +62,8 @@ type
   function ByName(AName: string): string;
   function ForeignKey(
     ATableName: string; AFieldName: string; ASortType: TSortType): TForeignKey;
+  function GenNewTable(ATable1, ATable2,
+  AField1, AField2: string; i: integer): string;
 
 const
   null = '*null*';
@@ -69,6 +71,7 @@ const
 var
   Menu: TMainMenu;
   Tables: array of TTable;
+  ConflTable, ConflRecordsTable, ConflTypeTable: TTable;
 
 implementation
 
@@ -322,6 +325,47 @@ begin
       ForeignKey('Rooms', 'Name', stLingvo));
     AddField(True, 'Week', int,
       ForeignKey('Days', 'Name', stNatural));
+  end;
+
+  ConflTable := TTable.Create(
+    'Conflicts', 'Конфликты', 'CONFL_ID', False, tUnChange);
+  with ConflTable do begin
+    JoinName := ConflTable.en;
+    AddSelectField('ID', 'ID', 100, stNatural);
+    AddSelectField('Name', 'Название', 100, stNatural);
+    AddField(False, 'ID', int);
+    AddField(True, 'Name', varchar);
+  end;
+  ConflTypeTable := TTable.Create(
+    'Confl_Type', 'Категории конфликтов', 'CONFL_TYPE_ID', False, tUnChange);
+  with ConflTypeTable do begin
+    JoinName := ConflTypeTable.en;
+    AddSelectField('ID', 'ID', 100, stNatural);
+    AddSelectField('Name', 'Тип конфликта', 100, stNatural);
+    AddField(False, 'ID', int);
+    AddField(True, 'Name', varchar);
+  end;
+  ConflRecordsTable := TTable.Create(
+    'ConflList', 'Кофликтующие записи', 'CONFLLIST_ID', True, tJoin);
+  with ConflRecordsTable do begin
+    JoinName := GenNewTable(
+      'ConflList CL', 'Conflicts C',  'CL.Confl_ID', 'C.ID', 2);
+    JoinName := GenNewTable(
+      JoinName, 'Schedule SCH', 'CL.Records_ID', 'SCH.ID', 2);
+    JoinName := GenNewTable(
+      JoinName, 'Confl_Type CT', 'CL.Confl_Type_ID', 'CT.ID', 2);
+    AddSelectField('CL.ID', 'CL.ID', 'ID', 100);
+    AddSelectField('C.Name', 'C.Name', 'Конфликт', 100);
+    AddSelectField('SCH.ID', 'SCH.ID', 'ID записи', 100);
+    AddSelectField('CT.Name', 'CT.Name', 'Тип конфликта', 120);
+    AddField(False, 'ID', int,
+      ForeignKey(null, null, st));
+    AddField(True, 'Confl_ID', int,
+      ForeignKey('Conflicts', 'Name', stNatural));
+    AddField(True, 'Records_ID', int,
+      ForeignKey('Schedule', 'ID', stNatural));
+    AddField(True, 'Confl_Type_ID', int,
+      ForeignKey('Confl_Type', 'Name', stNatural));
   end;
 end;
 

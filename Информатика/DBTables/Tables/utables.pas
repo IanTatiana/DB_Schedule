@@ -71,7 +71,7 @@ const
 var
   Menu: TMainMenu;
   Tables: array of TTable;
-  ConflTable, ConflRecordsTable, ConflTypeTable: TTable;
+  ConflTable, Confl_ListTable, ConflTypeTable: TTable;
 
 implementation
 
@@ -345,9 +345,9 @@ begin
     AddField(False, 'ID', int);
     AddField(True, 'Name', varchar);
   end;
-  ConflRecordsTable := TTable.Create(
+  Confl_ListTable := TTable.Create(
     'Confl_List', 'Кофликтующие записи', 'CONFLLIST_ID', True, tJoin);
-  with ConflRecordsTable do begin
+  with Confl_ListTable do begin
     JoinName := GenNewTable(
       'Confl_List CL', 'Conflicts C',  'CL.Confl_ID', 'C.ID', 2);
     JoinName := GenNewTable(

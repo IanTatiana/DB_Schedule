@@ -240,11 +240,9 @@ begin
   with Tables[High(Tables)] do begin
     JoinName := en;
     AddSelectField('"Index"', 'Index', 100, stNatural);
-    AddSelectField('"Begin"', 'Начало', 100, stNatural);
-    AddSelectField('"End"', 'Конец', 100, stNatural);
+    AddSelectField('"Time"', 'Время', 100, stNatural);
     AddField(False, '"Index"', int);
-    AddField(True, '"Begin"', date);
-    AddField(True, '"End"', date);
+    AddField(True, '"Time"', varchar);
   end;
   TableCreate('Subject_Types', 'Тип Занятий', 'TYPE_ID', False, tCascade);
   with Tables[High(Tables)] do begin
@@ -302,11 +300,10 @@ begin
     AddSelectField('s.name', 's.name', 'Предмет', 380);
     AddSelectField('st.name', 'st.name', 'Тип занятий', 100);
     AddSelectField('p.name', 'p.name', 'Преподаватель', 120);
-    AddSelectField('ts."Begin"', 'ts."Index"', 'Начало', 100);
-    AddSelectField('ts."End"', 'ts."Index"', 'Конец', 100);
+    AddSelectField('ts."Time"', 'ts."Index"', 'Время', 100);
+    AddSelectField('d.name', 'd."Index"', 'День недели', 120);
     AddSelectField('g.name', 'g.name', 'Группа', 60);
     AddSelectField('r.name', 'r.name', 'Аудитория', 100);
-    AddSelectField('d.name', 'd."Index"', 'День недели', 120);
     AddField(False, 'ID', int,
       ForeignKey(null, null, st));
     AddField(True, 'Subject_ID', int,
@@ -316,15 +313,13 @@ begin
     AddField(True, 'Professor_ID', int,
       ForeignKey('Professors', 'Name', stLingvo));
     AddField(True, 'Time_Index', int,
-      ForeignKey('Times', '"Begin"', stNatural));
+      ForeignKey('Times', '"Time"', stNatural));
     AddField(True, 'Day_Index', int,
-      ForeignKey('Times', '"End"', stNatural));
+      ForeignKey('Days', 'Name', stNatural));
     AddField(True, 'Group_ID', int,
       ForeignKey('Groups', 'Name', stLingvo));
     AddField(True, 'Room_ID', int,
       ForeignKey('Rooms', 'Name', stLingvo));
-    AddField(True, 'Week', int,
-      ForeignKey('Days', 'Name', stNatural));
   end;
 
   ConflTable := TTable.Create(

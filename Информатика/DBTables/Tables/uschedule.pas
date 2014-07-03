@@ -12,7 +12,7 @@ uses
 type
   TScheduleElem =  record
     Header, ID: string;
-    SchElemField: array [0..7] of string;
+    SchElemField: array [0..6] of string;
   end;
 
   TScheduleTable = class(TForm)
@@ -34,7 +34,7 @@ type
     ScheduleElem: TScheduleElem;
     ShowHeads,
     ShowAll: boolean;
-    CheckIndicate: Array [0..7] of TCheckBox;
+    CheckIndicate: Array [0..6] of TCheckBox;
     Indicate: TImage;
     DG_DblClick: boolean;
     OrderInCell: integer;
@@ -300,7 +300,7 @@ begin
     Width := 160;
     for i := 1 to High(Table.Fields) do
       Items.Add(Table.SelectFields[i].ru);
-    ItemIndex := 7;
+    ItemIndex := 4;
     OnSelect := @ChangeIndicate;
   end;
 
@@ -336,9 +336,9 @@ end;
 procedure TScheduleTable.CreateCheckPanel();
 var
   i, r: integer;
-  SchElemName: array [0..7] of string = ( 'Предмет', 'Тип занятий',
-    'Преподаватель', 'Начало занятий', 'Окончание занятий', 'Группа',
-    'Аудитория', 'День недели');
+  SchElemName: array [0..6] of string = ( 'Предмет', 'Тип занятий',
+    'Преподаватель', 'Время занятий', 'День недели', 'Группа',
+    'Аудитория');
 begin
   CheckPanel := TPanel.Create(ToolsPanel);
   with CheckPanel do begin
@@ -562,11 +562,11 @@ procedure TScheduleTable.DrawGridDrawCell(
 var
   i, r: integer;
   Head: string;
-  Indents: array [0..7, 0..1] of integer = (
-    (18, 18), (210, 54), (18, 36) , (18, 72),
-    (62, 72), (210, 36), (210, 72), (18, 54));
-  SchElemName: array [0..7] of string = ( 'Предмет: ', 'Тип занятий: ',
-    'Преподаватель: ', '', ' - ', 'Группа: ', 'Аудитория: ', 'День недели: ');
+  Indents: array [0..6, 0..1] of integer = (
+    (18, 18), (210, 54), (18, 36) , (18, 54),
+    (62, 72), (210, 36), (210, 72));
+  SchElemName: array [0..6] of string = ( 'Предмет: ', 'Тип занятий: ',
+    'Преподаватель: ', '', 'День недели: ', 'Группа: ', 'Аудитория: ');
 begin
   if (aCol = 0) and (aRow = 0) then begin
     ScheduleGrid.Canvas.Pen.Color := clBlack;

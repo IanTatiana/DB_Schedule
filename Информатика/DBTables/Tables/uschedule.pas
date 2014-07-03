@@ -187,25 +187,27 @@ begin
     Caption := ' + ';
     OnClick := @AddElem;
   end;
-  DelBtn := TButton.Create(ScheduleGrid);
-  with DelBtn do begin
-    Parent := ScheduleGrid;
-    Height := side;
-    Width := side;
-    Top := AddBtn.Top + side;
-    Left := AddBtn.Left;
-    Caption := ' - ';
-    OnClick := @DelElem;
-  end;
-  UpdateBtn := TButton.Create(ScheduleGrid);
-  with UpdateBtn do begin
-    Parent := ScheduleGrid;
-    Height := side;
-    Width := side;
-    Top := DelBtn.Top + side;
-    Left := AddBtn.Left;
-    Caption := ' ! ';
-    OnClick := @UpdateElem;
+  if ScheduleMatrix[Col][Row][OrderInCell].SchElemField[0] <> '' then begin
+    DelBtn := TButton.Create(ScheduleGrid);
+    with DelBtn do begin
+      Parent := ScheduleGrid;
+      Height := side;
+      Width := side;
+      Top := AddBtn.Top + side;
+      Left := AddBtn.Left;
+      Caption := ' - ';
+      OnClick := @DelElem;
+    end;
+    UpdateBtn := TButton.Create(ScheduleGrid);
+    with UpdateBtn do begin
+      Parent := ScheduleGrid;
+      Height := side;
+      Width := side;
+      Top := DelBtn.Top + side;
+      Left := AddBtn.Left;
+      Caption := ' ! ';
+      OnClick := @UpdateElem;
+    end;
   end;
 end;
 
@@ -246,9 +248,9 @@ end;
 
 procedure TScheduleTable.FreeEditBtn();
 begin
-  AddBtn.Free;
-  DelBtn.Free;
-  UpdateBtn.Free;
+  AddBtn.Free; AddBtn := nil;
+  DelBtn.Free; DelBtn := nil;
+  UpdateBtn.Free; UpdateBtn := nil;
 end;
 
 procedure TScheduleTable.CreateSectionPanel();

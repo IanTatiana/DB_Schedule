@@ -223,7 +223,9 @@ var
   i: integer;
   Lim, Val: string;
   db: TMyDBTools;
+  Unfilled: string;
 begin
+  Unfilled := '';
   db := TMyDBTools.Create(Self, TableNum);
   Lim := ' NEXT VALUE FOR ' + FTable.GenName;
   for i := 0 to High(FFields) do
@@ -242,6 +244,10 @@ begin
           Val := FFields[i].FEdit.Text;
       end;
       tJoin: begin
+        if FFields[i].FComboBox.ItemIndex = -1 then begin
+          Unfilled := Unfilled + #10#13 + FFields[i].FLabel.Caption;
+          continue;
+        end;
         Val := FPossibleList[i][FFields[i].FComboBox.ItemIndex];
       end;
       tUnChange: begin
@@ -250,6 +256,12 @@ begin
       end;
     end;
     db.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString := Val;
+  end;
+  if Unfilled <> '' then begin
+    ShowMessage(
+      'Пожалуйста, выберите информацию из списка в следующем(их) поле(ях): ' +
+      Unfilled);
+    Exit;
   end;
   db.SQLQuery.ExecSQL; db.Free;
   SQLTransaction_.Commit;

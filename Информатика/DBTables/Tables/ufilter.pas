@@ -12,6 +12,7 @@ const
   FilterWidth = 256;
 
 type
+
   TFilter = class
   protected
     LocalTop,
@@ -48,6 +49,7 @@ type
     procedure ShowBtnClick(Sender: TObject);
     procedure RefreshBtn();
     constructor Create(AOwner: TForm; ADBTools: TMyDBTools; Num: Integer = 0);
+    procedure AddAndFillFilter(i: integer; s: string);
   end;
 
 implementation
@@ -55,7 +57,7 @@ implementation
 uses
   UTableForm, USchedule;
 
-//----TFilter-------------------------------------------------------------------
+//----TFilterPanel--------------------------------------------------------------
 constructor TFilterPanel.Create(
   AOwner: TForm; ADBTools: TMyDBTools; Num: Integer = 0 );
 begin
@@ -168,6 +170,13 @@ begin
   AddBtn.Top := Filters[High(Filters)].MaxTop + 16;
   DelBtn.Top := AddBtn.Top;
   ShowBtn.Top := AddBtn.Top;
+end;
+
+procedure TFilterPanel.AddAndFillFilter(i: integer; s: string);
+begin
+  Filters[High(Filters)].FieldCmbBox.ItemIndex := i;
+  Filters[High(Filters)].LimEdit.Text := s;
+  AddBtnClick(AddBtn);
 end;
 
 //----TFilter-------------------------------------------------------------------

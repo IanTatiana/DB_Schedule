@@ -27,6 +27,8 @@ type
     procedure Activate; override;
     procedure GridDblClick(Sender: TObject);
     procedure Russification;
+    procedure FillFiters(i: integer; s: string);
+    procedure ShowTableData(Sender: TObject);
   end;
 
 implementation
@@ -103,6 +105,12 @@ begin
   end;
   EditCardForm.Free; EditCardForm := nil;
   EditCardForm := TEditCard.CreateNew(Self, Num);
+  OnShow := @ShowTableData;
+end;
+
+procedure TTableForm.ShowTableData(Sender: TObject);
+begin
+  FilterPanel.ShowBtnClick(nil);
 end;
 
 procedure TTableForm.InitData();
@@ -134,6 +142,11 @@ procedure TTableForm.AddBtnClick(Sender: TObject);
 begin
   InitData();
   EditCardForm.Show(TableNum, ctAddition);
+end;
+
+procedure TTableForm.FillFiters(i: integer; s: string);
+begin
+  FilterPanel.AddAndFillFilter(i, s);
 end;
 
 procedure TTableForm.Activate;

@@ -71,7 +71,7 @@ const
 var
   Menu: TMainMenu;
   Tables: array of TTable;
-  ConflTable, Confl_ListTable, ConflTypeTable: TTable;
+  ConflTable: TTable;
 
 implementation
 
@@ -328,34 +328,10 @@ begin
     JoinName := ConflTable.en;
     AddSelectField('ID', 'ID', 100, stNatural);
     AddSelectField('Name', 'Название', 100, stNatural);
+    AddSelectField('AQuery', 'Запрос', 100, stNatural);
     AddField(False, 'ID', int);
     AddField(True, 'Name', varchar);
-  end;
-  ConflTypeTable := TTable.Create(
-    'Confl_Type', 'Категории конфликтов', 'CONFL_TYPE_ID', False, tUnChange);
-  with ConflTypeTable do begin
-    JoinName := ConflTypeTable.en;
-    AddSelectField('ID', 'ID', 100, stNatural);
-    AddSelectField('Name', 'Тип конфликта', 100, stNatural);
-    AddField(False, 'ID', int);
-    AddField(True, 'Name', varchar);
-  end;
-  Confl_ListTable := TTable.Create(
-    'Confl_List', 'Кофликтующие записи', 'CONFLLIST_ID', True, tJoin);
-  with Confl_ListTable do begin
-    JoinName := GenNewTable(
-      'Confl_List CL', 'Conflicts C',  'CL.Confl_ID', 'C.ID', 2);
-    JoinName := GenNewTable(
-      JoinName, 'Confl_Type CT', 'CL.Confl_Type_ID', 'CT.ID', 2);
-    AddSelectField('CL.ID', 'CL.ID', 'ID', 100);
-    AddSelectField('C.Name', 'C.Name', 'Конфликт', 100);
-    AddSelectField('CT.Name', 'CT.Name', 'Тип конфликта', 120);
-    AddField(False, 'ID', int,
-      ForeignKey(null, null, st));
-    AddField(True, 'Confl_ID', int,
-      ForeignKey('Conflicts', 'Name', stNatural));
-    AddField(True, 'Confl_Type_ID', int,
-      ForeignKey('Confl_Type', 'Name', stNatural));
+    AddField(True, 'AQuery', varchar);
   end;
 end;
 

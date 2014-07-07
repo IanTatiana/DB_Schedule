@@ -6,8 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Dialogs, Menus, ExtCtrls, Grids, UTables,
-  UTableForm, USchedule, sqldb, IBConnection, UMyDBTools, Controls, StdCtrls,
-  ComCtrls;
+  UTableForm, USchedule, sqldb, IBConnection, UMyDBTools, Controls, StdCtrls;
 
 type
 
@@ -15,6 +14,9 @@ type
 
   TForm1 = class(TForm)
     DrawGrid1: TDrawGrid;
+  procedure DrawGrid1Click(Sender: TObject);
+  procedure DrawGrid1SelectCell(Sender: TObject; aCol, aRow: Integer;
+      var CanSelect: Boolean);
   protected
     MyDBTools: TMyDBTools;
   published
@@ -34,6 +36,17 @@ implementation
 {$R *.lfm}
 
 { TForm1 }
+
+procedure TForm1.DrawGrid1SelectCell(Sender: TObject; aCol, aRow: Integer;
+  var CanSelect: Boolean);
+begin
+  //ShowMessage('sda');
+end;
+
+procedure TForm1.DrawGrid1Click(Sender: TObject);
+begin
+
+end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 var

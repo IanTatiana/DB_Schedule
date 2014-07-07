@@ -7,7 +7,7 @@ interface
 uses
   types, Classes, SysUtils, Forms, Grids, ExtCtrls, UTables, SQLdb,
   IBConnection, db, Dialogs, UMyDBTools, StdCtrls, Graphics, Controls,
-  UFilter, UEditCardForm, UConflictsForm;
+  UFilter, UEditCardForm, UConflictsForm, UExport;
 
 type
   TScheduleElem =  record
@@ -45,6 +45,7 @@ type
     AddBtn,
     DelBtn,
     UpdateBtn: TButton;
+    ExportHTMLBtn: TButton;
     procedure ChangeIndicate(Sender: TObject);
     procedure CheckClick(Sender: TObject);
     procedure PreferClick(Sender: TObject);
@@ -65,6 +66,7 @@ type
     procedure DelElem(Sender: TObject);
     procedure UpdateElem(Sender: TObject);
     procedure ShowConflicts(Sender: TObject);
+    procedure ExportHTML(Sender: TObject);
   public
     ScheduleMatrix: array of array of array of TScheduleElem;
     ShowElemOfCell: array of array of boolean;
@@ -213,8 +215,6 @@ end;
 
 procedure TScheduleTable.AddElem(Sender: TObject);
 begin
-  CallingForm := Self as TScheduleTable;
-  CallingForm.OnShow := @ShowSchedule;
   EditCardForm.Show(9, ctAddition);
 end;
 
@@ -429,6 +429,41 @@ begin
     Caption := 'Посмотреть';
     OnClick := @ShowConflicts;
   end;
+  ExportHTMLBtn := TButton.Create(ToolsPanel);
+  with ExportHTMLBtn do begin
+    Width := 120;
+    Top := ConflictsBtn.Top;
+    Parent := ConflictsPanel;
+    Caption := ' Экспорт в HTML ';
+    Left := ConflictsBtn.Left + ConflictsBtn.Width + 18;
+    OnClick := @ExportHTML;
+  end;
+end;
+
+procedure TScheduleTable.ExportHTML(Sender: TObject);
+var
+  HTMLFile: THTMLFormat;
+  i, j: integer;
+  f: Text;
+  s: string;
+begin
+  HTMLFile := THTMLFormat.Create;
+  for j := 0 to High(ScheduleMatrix[0]) do begin
+    HTMLFile.ClearData();
+    for i := 0 to High(ScheduleMatrix) do begin
+      if (i = 0) or (j = 0) then
+        s := ScheduleMatrix[i][j][0].Header
+      else
+        s := ScheduleMatrix[i][j][0].SchElemField[0];
+      HTMLFile.AddTableCol(s);
+    end;
+    HTMLFile.AddTableRow();
+  end;
+  HTMLFile.AddTable();
+  AssignFile(f, 'sds.html');
+  rewrite(f);
+  write(f, '<!DOCTYPE html><HTML><body>' + HTMLFile.Table + '</body></HTML>');
+  CloseFile(f);
 end;
 
 procedure TScheduleTable.ShowConflicts(Sender: TObject);

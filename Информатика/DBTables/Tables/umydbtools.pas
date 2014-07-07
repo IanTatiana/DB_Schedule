@@ -15,6 +15,7 @@ type
     constructor Create(AOwner: TComponent; Num: integer);
     function GetValue(i: integer): string;
     procedure ExecuteQuery(AQuery: string);
+    procedure ExecuteParamQuery(AQuery: string; i: integer);
     procedure EditQuery(AEditQuery: string);
     destructor Destroy; override;
   end;
@@ -58,6 +59,11 @@ begin
       Exit;
     end;
   end;
+end;
+
+procedure TMyDBTools.ExecuteParamQuery(AQuery: string; i: integer);
+begin
+
 end;
 
 procedure TMyDBTools.EditQuery(AEditQuery: string);

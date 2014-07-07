@@ -123,7 +123,6 @@ begin
     SelSchElem[High(SelSchElem)] := DBGrids.Columns[i].Field.Text;
   end;
   ID := DBTools.DataSource.DataSet.Fields[0].Value;
-  CallingForm := Self as TTableForm;
 end;
 
 procedure TTableForm.UpdateBtnClick(Sender: TObject);

@@ -449,10 +449,15 @@ var
 begin
   s := '';
   HTMLFile := THTMLFormat.Create;
+  s := HTMLFile.AddRow('Срез по полям: ');
+  s := s + '> ' + HTMLFile.AddRow(CB_Horz.Caption);
+  s := s + '> ' + HTMLFile.AddRow(CB_Vert.Caption);
+  HTMLFile.CreateHeader(s);
+
   for j := 0 to High(ScheduleMatrix[0]) do begin
     HTMLFile.ClearColData();
     for i := 0 to High(ScheduleMatrix) do begin
-       HTMLFile.ClearElemsData();
+      HTMLFile.ClearElemsData();
       if (i = 0) or (j = 0) then begin
         s := ScheduleMatrix[i][j][0].Header;
         HTMLFile.AddElem(s);
@@ -462,7 +467,7 @@ begin
         while ScheduleMatrix[i][j][r].SchElemField[0] <> '' do begin
           s := '';
           for k := 0 to High(ScheduleMatrix[i][j][r].SchElemField) do
-            s := s + #13#10 + ScheduleMatrix[i][j][r].SchElemField[k];
+            s := s + #10#13 + ScheduleMatrix[i][j][r].SchElemField[k];
           r += 1;
           HTMLFile.AddElem(s);
         end;
@@ -474,7 +479,8 @@ begin
   HTMLFile.AddTable();
   AssignFile(f, 'sds.html');
   rewrite(f);
-  write(f, '<!DOCTYPE HTML><HTML><body>' + HTMLFile.Table + '</body></HTML>');
+  write(f, '<!DOCTYPE HTML><HTML>'+ HTMLFile.Head + '<body>' +
+    HTMLFile.Table + '</body></HTML>');
   CloseFile(f);
 end;
 

@@ -11,22 +11,31 @@ type
 
  THTMLFormat = class
  protected
+   Elems: ansistring;
    Rows: ansistring;
    Cols: ansistring;
  public
    Table: ansistring;
-   procedure AddTableCol(s: string);
+   procedure AddElem(s: string);
+   procedure AddTableCol();
    procedure AddTableRow();
    procedure AddTable();
    function AddRow(s: ansistring): ansistring;
-   procedure ClearData();
+   procedure ClearColData();
+   procedure ClearElemsData();
  end;
 
 implementation
 
-procedure THTMLFormat.AddTableCol(s: string);
+procedure THTMLFormat.AddElem(s: string);
 begin
-  Cols := Cols + #10#13 + '<td style="width:300px">' + s + '</td>';
+  if s = '' then exit;
+  Elems := Elems + '<div style="width:300px">' + s + '</div>';
+end;
+
+procedure THTMLFormat.AddTableCol();
+begin
+  Cols := Cols + #10#13 + '<td>' + Elems + '</td>';
 end;
 
 procedure THTMLFormat.AddTableRow();
@@ -46,9 +55,14 @@ begin
   Result := s  + '</br>';
 end;
 
-procedure THTMLFormat.ClearData();
+procedure THTMLFormat.ClearColData();
 begin
   Cols := '';
+end;
+
+procedure THTMLFormat.ClearElemsData();
+begin
+  Elems := '';
 end;
 
 end.

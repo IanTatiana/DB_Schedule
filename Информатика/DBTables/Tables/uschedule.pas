@@ -443,26 +443,38 @@ end;
 procedure TScheduleTable.ExportHTML(Sender: TObject);
 var
   HTMLFile: THTMLFormat;
-  i, j: integer;
+  i, j, k, r: integer;
   f: Text;
   s: string;
 begin
+  s := '';
   HTMLFile := THTMLFormat.Create;
   for j := 0 to High(ScheduleMatrix[0]) do begin
-    HTMLFile.ClearData();
+    HTMLFile.ClearColData();
     for i := 0 to High(ScheduleMatrix) do begin
-      if (i = 0) or (j = 0) then
-        s := ScheduleMatrix[i][j][0].Header
-      else
-        s := ScheduleMatrix[i][j][0].SchElemField[0];
-      HTMLFile.AddTableCol(s);
+       HTMLFile.ClearElemsData();
+      if (i = 0) or (j = 0) then begin
+        s := ScheduleMatrix[i][j][0].Header;
+        HTMLFile.AddElem(s);
+      end
+      else begin
+        r := 0;
+        while ScheduleMatrix[i][j][r].SchElemField[0] <> '' do begin
+          s := '';
+          for k := 0 to High(ScheduleMatrix[i][j][r].SchElemField) do
+            s := s + #13#10 + ScheduleMatrix[i][j][r].SchElemField[k];
+          r += 1;
+          HTMLFile.AddElem(s);
+        end;
+      end;
+      HTMLFile.AddTableCol;
     end;
     HTMLFile.AddTableRow();
   end;
   HTMLFile.AddTable();
   AssignFile(f, 'sds.html');
   rewrite(f);
-  write(f, '<!DOCTYPE html><HTML><body>' + HTMLFile.Table + '</body></HTML>');
+  write(f, '<!DOCTYPE HTML><HTML><body>' + HTMLFile.Table + '</body></HTML>');
   CloseFile(f);
 end;
 

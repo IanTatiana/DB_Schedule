@@ -30,6 +30,7 @@ type
     property MaxLeft: integer read MaxLeftVal;
     property TableTag: integer read Num;
     constructor Create(APanel: TPanel; ATableTag, ALTop, ALLeft: integer);
+    procedure FilterChangeVal(Sender: TObject);
     destructor Destroy; override;
   end;
 
@@ -50,7 +51,14 @@ type
     procedure RefreshBtn();
     constructor Create(AOwner: TForm; ADBTools: TMyDBTools; Num: Integer = 0);
     procedure AddAndFillFilter(i: integer; s: string);
+    function GetFilterVal(i: integer): string;
+    function GetFilterCaption(i: integer): string;
+    function GetCmpSign(i: integer): string;
+    function GetFilterCount(): integer;
   end;
+
+var
+  FilterActive: boolean;
 
 implementation
 
@@ -115,6 +123,7 @@ end;
 
 procedure TFilterPanel.AddBtnClick(Sender: TObject);
 begin
+  FilterActive := False;
   SetLength(Filters, Length(Filters) + 1);
   Filters[High(Filters)] := TFilter.Create(
     Self, Filters[0].TableTag, Filters[High(Filters) - 1].MaxTop + 16,
@@ -124,6 +133,7 @@ end;
 
 procedure TFilterPanel.DelBtnClick(Sender: TObject);
 begin
+  FilterActive := False;
   if Length(Filters) = 1 then Exit;
   Filters[High(Filters)].Free;
   SetLength(Filters, Length(Filters) - 1);
@@ -135,6 +145,7 @@ var
   i: integer;
   Limits: array of string;
 begin
+  FilterActive := True;
   if Parent is TScheduleTable then
     (Parent as TScheduleTable).UpdateScheduleGrid();
   DBTools.SQLQuery.Active := False;
@@ -179,6 +190,26 @@ begin
   AddBtnClick(AddBtn);
 end;
 
+function TFilterPanel.GetFilterVal(i: integer): string;
+begin
+  Result := Filters[i].LimEdit.Text;
+end;
+
+function TFilterPanel.GetCmpSign(i: integer): string;
+begin
+  Result := Filters[i].CmpCmbBox.Text;
+end;
+
+function TFilterPanel.GetFilterCaption(i: integer): string;
+begin
+  Result := Filters[i].FieldCmbBox.Text;
+end;
+
+function TFilterPanel.GetFilterCount(): integer;
+begin
+  Result := Length(Filters);
+end;
+
 //----TFilter-------------------------------------------------------------------
 constructor TFilter.Create(APanel: TPanel; ATableTag, ALTop, ALLeft: integer);
 var
@@ -197,6 +228,7 @@ begin
     for i := 1 to High(Tables[ATableTag].SelectFields) do
       Items.Add(Tables[ATableTag].SelectFields[i].ru);
     ItemIndex := 0;
+    OnChange := @FilterChangeVal;
   end;
 
   CmpCmbBox := TComboBox.Create(APanel);
@@ -210,6 +242,7 @@ begin
     Items.Add('>');
     Items.Add('<');
     ItemIndex := 0;
+    OnChange := @FilterChangeVal;
   end;
 
   LimEdit := TEdit.Create(APanel);
@@ -218,10 +251,16 @@ begin
     Top := CmpCmbBox.Top;
     Left := CmpCmbBox.Left + CmpCmbBox.Width + 4;
     Width := 204;
+    OnChange := @FilterChangeVal;
   end;
 
   MaxTopVal := CmpCmbBox.Top + CmpCmbBox.Height;
   MaxLeftVal := LocalLeft;
+end;
+
+procedure TFilter.FilterChangeVal(Sender: TObject);
+begin
+  FilterActive := False;
 end;
 
 destructor TFilter.Destroy;

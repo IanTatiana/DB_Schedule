@@ -445,34 +445,52 @@ var
   HTMLFile: THTMLFormat;
   i, j, k, r: integer;
   f: Text;
-  s: string;
+  HeadElem: boolean;
+  s, fval, fcmp, fcap, t1, t2: string;
+  SchElemName: array [0..6] of string = ( 'Предмет: ', 'Тип занятий: ',
+    'Преподаватель: ', 'Время занятий: ', 'День недели: ', 'Группа: ', 'Аудитория: ');
 begin
   s := '';
   HTMLFile := THTMLFormat.Create;
-  s := HTMLFile.AddRow('Срез по полям: ');
-  s := s + '> ' + HTMLFile.AddRow(CB_Horz.Caption);
-  s := s + '> ' + HTMLFile.AddRow(CB_Vert.Caption);
-  HTMLFile.CreateHeader(s);
+  s := HTMLFile.AddRow(HTMLFile.HSize(2, 'Расписание'));
+  s := s + HTMLFile.AddRow('По горизонтали: ' + CB_Horz.Caption + '; ' +
+    'по вертикали: ' + CB_Vert.Caption + '; ');
+  t1 := HTMLFile.AddRow('Активные фильтры: '); t2 := '';
+  if FilterActive then begin
+    for i := 0 to FilterPanel.GetFilterCount() - 1 do begin
+      fcap := FilterPanel.GetFilterCaption(i);
+      fval := FilterPanel.GetFilterVal(i);
+      fcmp := FilterPanel.GetCmpSign(i);
+      if (fcap <> '') and (fval <> '') and (fcmp <> '') then
+        t2 := t2 + HTMLFile.AddRow(fcap + ' ' + fcmp + ' ' + fval);
+    end;
+  end;
 
+  if t2 = '' then
+    t1 := 'Активных фильтров нет.';
+  s := s + t1 + t2;
+  HTMLFile.CreateHeader(HTMLFile.AddRow(s));
   for j := 0 to High(ScheduleMatrix[0]) do begin
     HTMLFile.ClearColData();
     for i := 0 to High(ScheduleMatrix) do begin
       HTMLFile.ClearElemsData();
       if (i = 0) or (j = 0) then begin
-        s := ScheduleMatrix[i][j][0].Header;
-        HTMLFile.AddElem(s);
+        s := HTMLFile.MakeTextStrong(ScheduleMatrix[i][j][0].Header);
+        HeadElem := True;
+        HTMLFile.AddElem(s, HeadElem);
       end
       else begin
-        r := 0;
+        r := 0; HeadElem := False;
         while ScheduleMatrix[i][j][r].SchElemField[0] <> '' do begin
           s := '';
           for k := 0 to High(ScheduleMatrix[i][j][r].SchElemField) do
-            s := s + #10#13 + ScheduleMatrix[i][j][r].SchElemField[k];
+            s := s + HTMLFile.AddRow(HTMLFile.MakeTextStrong(SchElemName[k]) +
+              ScheduleMatrix[i][j][r].SchElemField[k]);
           r += 1;
-          HTMLFile.AddElem(s);
+          HTMLFile.AddElem(s, false);
         end;
       end;
-      HTMLFile.AddTableCol;
+      HTMLFile.AddTableCol(HeadElem);
     end;
     HTMLFile.AddTableRow();
   end;

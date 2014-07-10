@@ -5,7 +5,7 @@ unit UExport;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, comobj;
 
 type
 

@@ -143,31 +143,33 @@ end;
 procedure TFilterPanel.ShowBtnClick(Sender: Tobject);
 var
   i: integer;
-  Limits: array of string;
+  cmp, lim: string;
 begin
   FilterActive := True;
   if Parent is TScheduleTable then
     (Parent as TScheduleTable).UpdateScheduleGrid();
   DBTools.SQLQuery.Active := False;
   DBTools.SQLQuery.Prepare;
-  SetLength(Limits, 0);
+  DBTools.SQLQuery.SQL.Text := SelectText + ' WHERE 1 = 1 ';
   for i := 0 to High(Filters) do begin
     if (not (Filters[i].FieldCmbBox.Text = '')) and
       (not (Filters[i].CmpCmbBox.Text = '')) and
       (not (Filters[i].LimEdit.Text = '')) then
     begin
-      SetLength(Limits, Length(Limits) + 1);
-      Limits[High(Limits)] :=
+      if Filters[i].CmpCmbBox.Text = 'с' then begin
+        cmp := ' like ';
+        lim := '%'+Filters[i].LimEdit.Text+'%';
+      end
+      else begin
+        cmp := Filters[i].CmpCmbBox.Text;
+        lim := Filters[i].LimEdit.Text;
+      end;
+      DBTools.SQLQuery.SQL.Text := DBTools.SQLQuery.SQL.Text + ' AND ' +
         Table.SelectFields[Filters[i].FieldCmbBox.ItemIndex + 1].en +
-        Filters[i].CmpCmbBox.Text;
+        cmp + ' :param' + IntToStr(i);
+      DBTools.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString :=
+        lim;
     end;
-  end;
-  DBTools.SQLQuery.SQL.Text := SelectText + ' WHERE 1=1 ';
-  for i := 0 to High(Limits) do begin
-    DBTools.SQLQuery.SQL.Text :=
-      DBTools.SQLQuery.SQL.Text + ' AND ' + Limits[i] + ' :param' + IntToStr(i);
-    DBTools.SQLQuery.Params.ParamByName('param' + IntToStr(i)).AsString :=
-      Filters[i].LimEdit.Text;
   end;
   DBTools.ExecuteQuery(DBTools.SQLQuery.SQL.Text + ' ' + OrderByText);
   if Parent is TTableForm then
@@ -241,6 +243,9 @@ begin
     Items.Add('=');
     Items.Add('>');
     Items.Add('<');
+    Items.Add('>=');
+    Items.Add('<=');
+    Items.Add('с');
     ItemIndex := 0;
     OnChange := @FilterChangeVal;
   end;

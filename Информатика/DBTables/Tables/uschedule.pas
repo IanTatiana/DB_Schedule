@@ -7,13 +7,16 @@ interface
 uses
   types, Classes, SysUtils, Forms, Grids, ExtCtrls, UTables, SQLdb,
   IBConnection, db, Dialogs, UMyDBTools, StdCtrls, Graphics, Controls,
-  UFilter, UEditCardForm, UConflictsForm, UExport;
+  UFilter, UEditCardForm, UConflictsForm;
 
 type
+
   TScheduleElem =  record
     Header, ID: string;
     SchElemField: array [0..6] of string;
   end;
+
+  THiperArray = array of array of array of TScheduleElem;
 
   TScheduleTable = class(TForm)
   protected
@@ -45,7 +48,8 @@ type
     AddBtn,
     DelBtn,
     UpdateBtn: TButton;
-    ExportHTMLBtn: TButton;
+    ExportHTMLBtn,
+    ExportExcelBtn: TButton;
     procedure ChangeIndicate(Sender: TObject);
     procedure CheckClick(Sender: TObject);
     procedure PreferClick(Sender: TObject);
@@ -67,8 +71,9 @@ type
     procedure UpdateElem(Sender: TObject);
     procedure ShowConflicts(Sender: TObject);
     procedure ExportHTML(Sender: TObject);
+    procedure ExportExcel(Sender: TObject);
   public
-    ScheduleMatrix: array of array of array of TScheduleElem;
+    ScheduleMatrix: THiperArray;
     ShowElemOfCell: array of array of boolean;
     DBTools: TMyDBTools;
     constructor CreateNew(AOwner: TComponent; Num: Integer=0); override;
@@ -86,11 +91,15 @@ const
   RHeight_h = 48;
   CWidth = 380;
   RHeight = 110;
-
+  SchElemName: array [0..6] of string = ( 'Предмет: ', 'Тип занятий: ',
+    'Преподаватель: ', 'Время занятий: ', 'День недели: ', 'Группа: ', 'Аудитория: ');
 var
   ScheduleTable: TScheduleTable;
 
 implementation
+
+uses
+  UExport;
 
 //----TScheduleTable------------------------------------------------------------
 constructor TScheduleTable.CreateNew(AOwner: TComponent; Num: Integer=0);
@@ -338,9 +347,6 @@ end;
 procedure TScheduleTable.CreateCheckPanel();
 var
   i, r: integer;
-  SchElemName: array [0..6] of string = ( 'Предмет', 'Тип занятий',
-    'Преподаватель', 'Время занятий', 'День недели', 'Группа',
-    'Аудитория');
 begin
   CheckPanel := TPanel.Create(ToolsPanel);
   with CheckPanel do begin
@@ -432,74 +438,39 @@ begin
   ExportHTMLBtn := TButton.Create(ToolsPanel);
   with ExportHTMLBtn do begin
     Width := 120;
-    Top := ConflictsBtn.Top;
+    Top := ConflictsBtn.Top - 18;
     Parent := ConflictsPanel;
     Caption := ' Экспорт в HTML ';
     Left := ConflictsBtn.Left + ConflictsBtn.Width + 18;
     OnClick := @ExportHTML;
   end;
+  ExportExcelBtn := TButton.Create(ToolsPanel);
+  with ExportExcelBtn do begin
+    Width := 120;
+    Top := ConflictsBtn.Top + 10;
+    Parent := ConflictsPanel;
+    Caption := ' Экспорт в Excel ';
+    Left := ConflictsBtn.Left + ConflictsBtn.Width + 18;
+    OnClick := @ExportExcel;
+  end;
 end;
 
 procedure TScheduleTable.ExportHTML(Sender: TObject);
 var
-  HTMLFile: THTMLFormat;
-  i, j, k, r: integer;
-  f: Text;
-  HeadElem: boolean;
-  s, fval, fcmp, fcap, t1, t2: string;
-  SchElemName: array [0..6] of string = ( 'Предмет: ', 'Тип занятий: ',
-    'Преподаватель: ', 'Время занятий: ', 'День недели: ', 'Группа: ', 'Аудитория: ');
+  Sch: THTMLExport;
 begin
-  s := '';
-  HTMLFile := THTMLFormat.Create;
-  s := HTMLFile.AddRow(HTMLFile.HSize(2, 'Расписание'));
-  s := s + HTMLFile.AddRow('По горизонтали: ' + CB_Horz.Caption + '; ' +
-    'по вертикали: ' + CB_Vert.Caption + '; ');
-  t1 := HTMLFile.AddRow('Активные фильтры: '); t2 := '';
-  if FilterActive then begin
-    for i := 0 to FilterPanel.GetFilterCount() - 1 do begin
-      fcap := FilterPanel.GetFilterCaption(i);
-      fval := FilterPanel.GetFilterVal(i);
-      fcmp := FilterPanel.GetCmpSign(i);
-      if (fcap <> '') and (fval <> '') and (fcmp <> '') then
-        t2 := t2 + HTMLFile.AddRow(fcap + ' ' + fcmp + ' ' + fval);
-    end;
-  end;
+  Sch := THTMLExport.Create;
+  Sch.CreateExportObject(ScheduleMatrix, FilterPanel, CB_Horz.Caption,
+    CB_Vert.Caption, FilterActive);
+end;
 
-  if t2 = '' then
-    t1 := 'Активных фильтров нет.';
-  s := s + t1 + t2;
-  HTMLFile.CreateHeader(HTMLFile.AddRow(s));
-  for j := 0 to High(ScheduleMatrix[0]) do begin
-    HTMLFile.ClearColData();
-    for i := 0 to High(ScheduleMatrix) do begin
-      HTMLFile.ClearElemsData();
-      if (i = 0) or (j = 0) then begin
-        s := HTMLFile.MakeTextStrong(ScheduleMatrix[i][j][0].Header);
-        HeadElem := True;
-        HTMLFile.AddElem(s, HeadElem);
-      end
-      else begin
-        r := 0; HeadElem := False;
-        while ScheduleMatrix[i][j][r].SchElemField[0] <> '' do begin
-          s := '';
-          for k := 0 to High(ScheduleMatrix[i][j][r].SchElemField) do
-            s := s + HTMLFile.AddRow(HTMLFile.MakeTextStrong(SchElemName[k]) +
-              ScheduleMatrix[i][j][r].SchElemField[k]);
-          r += 1;
-          HTMLFile.AddElem(s, false);
-        end;
-      end;
-      HTMLFile.AddTableCol(HeadElem);
-    end;
-    HTMLFile.AddTableRow();
-  end;
-  HTMLFile.AddTable();
-  AssignFile(f, 'sds.html');
-  rewrite(f);
-  write(f, '<!DOCTYPE HTML><HTML>'+ HTMLFile.Head + '<body>' +
-    HTMLFile.Table + '</body></HTML>');
-  CloseFile(f);
+procedure TScheduleTable.ExportExcel(Sender: TObject);
+var
+  Sch: TExcelExport;
+begin
+  Sch := TExcelExport.Create;
+  Sch.CreateExportObject(ScheduleMatrix, FilterPanel, CB_Horz.Caption,
+    CB_Vert.Caption, FilterActive);
 end;
 
 procedure TScheduleTable.ShowConflicts(Sender: TObject);
@@ -637,9 +608,7 @@ var
   Head: string;
   Indents: array [0..6, 0..1] of integer = (
     (18, 18), (210, 54), (18, 36) , (18, 54),
-    (62, 72), (210, 36), (210, 72));
-  SchElemName: array [0..6] of string = ( 'Предмет: ', 'Тип занятий: ',
-    'Преподаватель: ', '', 'День недели: ', 'Группа: ', 'Аудитория: ');
+    (18, 72), (210, 36), (210, 72));
 begin
   if (aCol = 0) and (aRow = 0) then begin
     ScheduleGrid.Canvas.Pen.Color := clBlack;

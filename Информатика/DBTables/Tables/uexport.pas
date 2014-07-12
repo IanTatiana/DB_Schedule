@@ -68,8 +68,9 @@ implementation
 //----TExport-------------------------------------------------------------------
 function TExport.Selection(AHorzName, AVertName: string): string;
 begin
-  Result := 'По горизонтали: ' + AHorzName + '; '#13#10 +
-    'по вертикали: ' + AVertName + '; ';
+  Result :=
+    '  По горизонтали: ' + AHorzName + '; '#13#10 +
+    '  по вертикали: ' + AVertName + '; ';
 end;
 
 function TExport.Filters(
@@ -78,18 +79,20 @@ var
   fval, fcmp, fcap, t2: string;
   i: integer;
 begin
-  Result := 'Активные фильтры: ';  t2 := '';
+  Result := '  Активные фильтры: ';  t2 := '';
   if AFilterActive then begin
     for i := 0 to AFilterPanel.GetFilterCount() - 1 do begin
       fcap := AFilterPanel.GetFilterCaption(i);
       fval := AFilterPanel.GetFilterVal(i);
       fcmp := AFilterPanel.GetCmpSign(i);
-      if (fcap <> '') and (fval <> '') and (fcmp <> '') then
-        t2 := t2 + #10#13 + fcap + ' ' + fcmp + ' ' + fval;
+      if (fcap <> '') and (fval <> '') and (fcmp <> '') then begin
+        if fcmp = 'с' then fval := '"' + fval + '"';
+        t2 := t2 + #10#13'  ' + fcap + ' ' + fcmp + ' ' + fval;
+      end;
     end;
   end;
   if t2 = '' then
-    Result := 'Активных фильтров нет'
+    Result := '  Активных фильтров нет'
   else
     Result := Result + #10#13 + t2;
 end;
@@ -215,49 +218,65 @@ end;
 procedure THTMLExport.CreateHeader(s: string);
 begin
   FHead := #10#13 +
-    '  <head>'#10#13 +
+    '<head>'#10#13 +
     '    <style>'#10#13 +
     '      table,th,td{'#10#13 +
     '        border:1px groove black;'#10#13 +
     '        border-collapse:collapse;}'#10#13 +
-    '      .tdHead{background: #CCC}'#10#13 +
-    '      .divElemSchedule{width: 300px;padding: 12px;}'#10#13 +
-    '      .divHeadElemSchedule{width: 300px;padding: 12px;}'#10#13 +
-    '      .divHead{width:100%;padding: 48px;}'#10#13 +
+    '      .tdHead{'#10#13 +
+    '         background: #CCC}'#10#13 +
+    '      .divElemSchedule{'#10#13 +
+    '         width: 300px;'#10#13 +
+    '         padding: 12px;}'#10#13 +
+    '      .divHeadElemSchedule{'#10#13 +
+    '         width: 300px;'#10#13 +
+    '         padding: 12px;}'#10#13 +
+    '      .divHead{'#10#13 +
+    '         width:100%;'#10#13 +
+    '         padding: 48px;}'#10#13 +
     '    </style>'#10#13 +
     '    <div class = "divHead">'#10#13'  ' + s +
     '    </div>'#10#13 +
-    '  </head>'
+    '</head>'
 end;
 
 procedure THTMLExport.AddElem(s: ansistring);
 begin
-  FElems := FElems +
-    #10#13'      <div class="divElemSchedule">' + s + #10#13'      </div>';
+  FElems := FElems + #10#13 +
+    '      <div class="divElemSchedule">' + s + #10#13 +
+    '      </div>';
 end;
 
 procedure THTMLExport.AddHeadCellData(s: string; i, j: integer);
 begin
-  FCell := FCell +
-    #10#13'    <td class="tdHead"><div class="divHeadElemSchedule">' +
-    TextStrong_tag(s) + #10#13'    </div></td>';
+  FCell := FCell + #10#13 +
+    '    <td class="tdHead">'#10#13 +
+    '      <div class="divHeadElemSchedule">' + TextStrong_tag(s) + #10#13 +
+    '      </div>'#10#13 +
+    '    </td>';
 end;
 
 procedure THTMLExport.AddCellData(s: string; i, j: integer);
 begin
-  FCell := FCell + #10#13'    <td valign="top">' + s + #10#13'    </td>';
+  FCell := FCell + #10#13 +
+    '    <td valign="top">' + s + #10#13 +
+    '    </td>';
   inherited;
 end;
 
 procedure THTMLExport.GenRow();
 begin
-  FRows := FRows + #10#13'  <tr>' + FCell + #10#13'  </tr>';
+  FRows := FRows + #10#13 +
+    '  <tr>' + FCell + #10#13 +
+    '  </tr>';
   inherited;
 end;
 
 procedure THTMLExport.GenTable();
 begin
-  FTable := #10#13'  <table>' + FRows + #10#13'  </table>';
+  FTable := #10#13 +
+    '  <table>' + FRows + #10#13 +
+    '  </table>';
 end;
 
 function THTMLExport.NewLine(s1, s2: string): ansistring;
@@ -267,7 +286,7 @@ end;
 
 function THTMLExport.br_tag(s: ansistring): ansistring;
 begin
-  Result := s  + '</br>';
+  Result := s  + '</br>'#10#13;
 end;
 
 function THTMLExport.HSize_tag(i: integer; s: string): string;
@@ -277,7 +296,8 @@ end;
 
 function THTMLExport.TextStrong_tag(s: string): string;
 begin
-  Result := #10#13'  <strong>' + s + '  </strong>';
+  Result := #10#13 +
+    '        <strong>' + s + '</strong>';
 end;
 
 function THTMLExport.Body_tag(s: ansistring): ansistring;

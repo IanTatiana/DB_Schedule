@@ -7,7 +7,7 @@ interface
 uses
   types, Classes, SysUtils, Forms, Grids, ExtCtrls, UTables, SQLdb,
   IBConnection, db, Dialogs, UMyDBTools, StdCtrls, Graphics, Controls,
-  UFilter, UEditCardForm, UConflictsForm;
+  UFilter, UEditCardForm, UConflictsForm, Buttons;
 
 type
 
@@ -47,7 +47,8 @@ type
     ConflictsBtn: TButton;
     AddBtn,
     DelBtn,
-    UpdateBtn: TButton;
+    UpdateBtn: TBitBtn;
+    CurElemX, CurElemY: integer;
     ExportHTMLBtn,
     ExportExcelBtn: TButton;
     procedure ChangeIndicate(Sender: TObject);
@@ -173,7 +174,6 @@ begin
   if (Col = 0) or (Row = 0) then begin
     Exit;
   end;
-  FreeEditBtn();
   CreateEditBtn(ScheduleGrid.CellRect(Col, Row), Point(X, Y));
 end;
 
@@ -185,38 +185,39 @@ const
 begin
   OrderInCell := (CursorPos.Y - aRect.Top) div RHeight;
   ScheduleGrid.MouseToCell(CursorPos.X, CursorPos.Y, Col, Row);
-  AddBtn := TButton.Create(ScheduleGrid);
+  FreeEditBtn();
+  AddBtn := TBitBtn.Create(ScheduleGrid);
   with AddBtn do begin
     Parent := ScheduleGrid;
     Height := side;
-    Width := side;
+    Width := side + 6;
     if Length(ScheduleMatrix[Col][Row]) > 1 then
       Top := aRect.Top + ((CursorPos.Y - aRect.Top) div RHeight) * RHeight
     else
       Top := aRect.Top;
     Left := aRect.Right - Width;
-    Caption := ' + ';
+    Glyph.LoadFromFile('icons/add.bmp');
     OnClick := @AddElem;
   end;
   if ScheduleMatrix[Col][Row][OrderInCell].SchElemField[0] <> '' then begin
-    DelBtn := TButton.Create(ScheduleGrid);
+    DelBtn := TBitBtn.Create(ScheduleGrid);
     with DelBtn do begin
       Parent := ScheduleGrid;
       Height := side;
-      Width := side;
+      Width := side + 6;
       Top := AddBtn.Top + side;
       Left := AddBtn.Left;
-      Caption := ' - ';
+      Glyph.LoadFromFile('icons/delete.bmp');
       OnClick := @DelElem;
     end;
-    UpdateBtn := TButton.Create(ScheduleGrid);
+    UpdateBtn := TBitBtn.Create(ScheduleGrid);
     with UpdateBtn do begin
       Parent := ScheduleGrid;
       Height := side;
-      Width := side;
+      Width := side + 6;
       Top := DelBtn.Top + side;
       Left := AddBtn.Left;
-      Caption := ' ! ';
+      Glyph.LoadFromFile('icons/update.bmp');
       OnClick := @UpdateElem;
     end;
   end;

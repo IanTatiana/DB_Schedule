@@ -392,7 +392,6 @@ end;
 constructor TEditCard.CreateNew(AOwner: TComponent; Num: Integer=0);
 begin
   inherited CreateNew(AOwner);
-  Caption := 'Редактирование';
   Width := 332;
   Height := 400;
   Position := poScreenCenter;
@@ -403,12 +402,18 @@ end;
 procedure TEditCard.Show(ANum: integer; ACardType: TCardType);
 begin
   FEditPanel.Free; FEditPanel := nil;
-  if ACardType = ctAddition then
+  if ACardType = ctAddition then begin
+    Caption := 'Добавление' ;
     FEditPanel := TAddNewDataPanel.Create(Self, ANum);
-  if ACardType = ctDeletion then
+  end;
+  if ACardType = ctDeletion then begin
+    Caption := 'Удаление';
     FEditPanel := TDelDataPanel.Create(Self, ANum);
-  if ACardType = ctUpdating then
+  end;
+  if ACardType = ctUpdating then begin
+    Caption := 'Редактирование';
     FEditPanel := TUpdateDataPanel.Create(Self, ANum);
+  end;
   FEditPanel.Parent := Self;
   inherited Show;
 end;

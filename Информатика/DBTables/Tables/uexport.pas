@@ -18,7 +18,7 @@ type
   public
     procedure CreateExportObject(AScheduleMatrix: THiperArray;
       AFilterPanel: TFilterPanel; AHorzName, AVertName: string;
-      AFilterActive: boolean); virtual; abstract;
+      AFilterActive: boolean; AFName: string); virtual; abstract;
     procedure AddHeadCellData(s: string; i, j: integer); virtual; abstract;
     procedure AddCellData(s: string; i, j: integer); virtual;
     procedure AddElem(s: string); virtual; abstract;
@@ -37,7 +37,7 @@ type
   public
     procedure CreateExportObject(AScheduleMatrix: THiperArray;
       AFilterPanel: TFilterPanel; AHorzName, AVertName: string;
-      AFilterActive: boolean); override;
+      AFilterActive: boolean; AFName: string); override;
     procedure AddHeadCellData(s: string; i, j: integer); override;
     procedure AddCellData(s: string; i, j: integer); override;
     procedure CreateHeader(s: string);
@@ -49,11 +49,11 @@ type
 
   TExcelExport = class(TExport)
   protected
-    XLS, WorkBook, Sheet, VArray, Rng: Variant;
+    ExcelObj, WorkBook, Sheet, VArray, Rng: Variant;
   public
     procedure CreateExportObject(AScheduleMatrix: THiperArray;
       AFiltPanel: TFilterPanel; AHorzName, AVertName: string;
-      AFiltActive: boolean); override;
+      AFiltActive: boolean; AFName: string); override;
     procedure AddHeadCellData(s: string; i, j: integer); override;
     procedure AddCellData(s: string; i, j: integer); override;
     procedure AddElem(s: string); override;
@@ -132,13 +132,13 @@ end;
 //----TExcelExport--------------------------------------------------------------
 procedure TExcelExport.CreateExportObject(AScheduleMatrix: THiperArray;
   AFiltPanel: TFilterPanel; AHorzName, AVertName: string;
-  AFiltActive: boolean);
+  AFiltActive: boolean; AFName: string);
 var
   i, j, k, r: integer;
   s: string;
 begin
-  XLS := CreateOleObject('Excel.Application');
-  WorkBook := XLS.WorkBooks.Add;
+  ExcelObj := CreateOleObject('Excel.Application');
+  WorkBook := ExcelObj.WorkBooks.Add;
   Sheet := WorkBook.ActiveSheet;
 
   Sheet.Cells[1, 1] :=  WideString(UTF8ToSys('Расписание'));
@@ -155,9 +155,9 @@ begin
   Rng := Sheet.Range['A1: B4'];
   Rng.EntireColumn.AutoFit;
 
-  XLS.DisplayAlerts := False;
-  XLS.Worksheets[1].SaveAs(WideString(UTF8ToSys('Sch')));
-  XLS.Application.Quit;
+  ExcelObj.DisplayAlerts := False;
+  ExcelObj.Worksheets[1].SaveAs(WideString(UTF8ToSys(AFName)));
+  ExcelObj.Application.Quit;
 end;
 
 procedure TExcelExport.AddHeadCellData(s: string; i, j: integer);
@@ -194,7 +194,7 @@ end;
 //----THTMLExport---------------------------------------------------------------
 procedure THTMLExport.CreateExportObject(AScheduleMatrix: THiperArray;
   AFilterPanel: TFilterPanel; AHorzName, AVertName: string;
-  AFilterActive: boolean);
+  AFilterActive: boolean; AFName: string);
 var
   f: text;
   i, j, k, r: integer;
@@ -205,10 +205,10 @@ begin
     br_tag(Filters(AFilterPanel, AFilterActive)));
   FillCells(AScheduleMatrix);
   GenTable();
-  //************
-  AssignFile(f, 'sds.html');
-  rewrite(f);
-  write(f, HTML_tag(FTable));
+
+  AssignFile(f, UTF8ToSys(AFName));
+  Rewrite(f);
+  Write(f, HTML_tag(FTable));
   CloseFile(f);
 end;
 

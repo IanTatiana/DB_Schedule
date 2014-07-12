@@ -458,19 +458,45 @@ end;
 procedure TScheduleTable.ExportHTML(Sender: TObject);
 var
   Sch: THTMLExport;
+  SaveDialog: TSaveDialog;
 begin
-  Sch := THTMLExport.Create;
-  Sch.CreateExportObject(ScheduleMatrix, FilterPanel, CB_Horz.Caption,
-    CB_Vert.Caption, FilterActive);
+  SaveDialog := TSaveDialog.Create(Self);
+  with SaveDialog do begin
+    Filter := 'Веб-страница HTML|*.html';
+    Options := Options + [ofOverwritePrompt, ofPathMustExist, ofNoValidate];
+    FilterIndex:= 1;
+    DefaultExt := '.html';
+    Title := ' Экспорт в HTML ';
+    FileName := 'Расписание';
+  end;
+  if SaveDialog.Execute then begin
+    Sch := THTMLExport.Create;
+    Sch.CreateExportObject(ScheduleMatrix, FilterPanel, CB_Horz.Caption,
+      CB_Vert.Caption, FilterActive, SaveDialog.FileName);
+  end;
+  SaveDialog.Free;
 end;
 
 procedure TScheduleTable.ExportExcel(Sender: TObject);
 var
   Sch: TExcelExport;
+  SaveDialog: TSaveDialog;
 begin
-  Sch := TExcelExport.Create;
-  Sch.CreateExportObject(ScheduleMatrix, FilterPanel, CB_Horz.Caption,
-    CB_Vert.Caption, FilterActive);
+  SaveDialog := TSaveDialog.Create(Self);
+  with SaveDialog do begin
+    Filter := 'Книга Microsoft Office Excel|*.xls';
+    Options := Options + [ofOverwritePrompt, ofPathMustExist, ofNoValidate];
+    FilterIndex:= 1;
+    DefaultExt := '.xls';
+    Title := ' Экспорт в Excel ';
+    FileName := 'Расписание';
+  end;
+  if SaveDialog.Execute then begin
+    Sch := TExcelExport.Create;
+    Sch.CreateExportObject(ScheduleMatrix, FilterPanel, CB_Horz.Caption,
+      CB_Vert.Caption, FilterActive, SaveDialog.FileName);
+  end;
+  SaveDialog.Free;
 end;
 
 procedure TScheduleTable.ShowConflicts(Sender: TObject);

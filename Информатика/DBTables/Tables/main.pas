@@ -13,14 +13,16 @@ type
   { TForm1 }
 
   TForm1 = class(TForm)
-    DrawGrid1: TDrawGrid;
-  procedure DrawGrid1Click(Sender: TObject);
-  procedure DrawGrid1SelectCell(Sender: TObject; aCol, aRow: Integer;
-      var CanSelect: Boolean);
+    RefItem: TMenuItem;
+    FileItem: TMenuItem;
+    ExitItem: TMenuItem;
+    AboutItem: TMenuItem;
+    procedure ExitItemClick(Sender: TObject);
+    procedure AboutItemClick(Sender: TObject);
   protected
     MyDBTools: TMyDBTools;
   published
-    MainMenu1: TMainMenu;
+    MainMenu: TMainMenu;
     ScheduleItem: TMenuItem;
     TablesItem: TMenuItem;
     procedure FormCreate(Sender: TObject);
@@ -37,15 +39,16 @@ implementation
 
 { TForm1 }
 
-procedure TForm1.DrawGrid1SelectCell(Sender: TObject; aCol, aRow: Integer;
-  var CanSelect: Boolean);
+procedure TForm1.ExitItemClick(Sender: TObject);
 begin
-  //ShowMessage('sda');
+  Close;
 end;
 
-procedure TForm1.DrawGrid1Click(Sender: TObject);
+procedure TForm1.AboutItemClick(Sender: TObject);
 begin
-
+  ShowMessage(
+    'Студент: Ян Т. В.'#13#10'Группа: Б8103а'#13#10 +
+    'Преподаватель: Кленин А. С.'#13#10'Июнь 2014г');
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -58,7 +61,7 @@ const
 begin
   Position := poScreenCenter;
   for i := 0 to High(Tables) do begin
-    MenuItem := TMenuItem.Create(MainMenu1);
+    MenuItem := TMenuItem.Create(MainMenu);
     with MenuItem do begin
       Caption := Tables[i].ru;
       Name := Tables[i].en + 'TableItem';

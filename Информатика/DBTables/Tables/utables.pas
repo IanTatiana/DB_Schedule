@@ -304,6 +304,8 @@ begin
     AddSelectField('d.name', 'd."Index"', 'День недели', 120);
     AddSelectField('g.name', 'g.name', 'Группа', 60);
     AddSelectField('r.name', 'r.name', 'Аудитория', 100);
+    AddSelectField('sch.periodfrom', 'sch.periodfrom', 'с', 100);
+    AddSelectField('sch.periodto', 'sch.periodto', 'до', 100);
     AddField(False, 'ID', int,
       ForeignKey(null, null, st));
     AddField(True, 'Subject_ID', int,
@@ -320,6 +322,8 @@ begin
       ForeignKey('Groups', 'Name', stLingvo));
     AddField(True, 'Room_ID', int,
       ForeignKey('Rooms', 'Name', stLingvo));
+    AddField(True, 'PeriodFrom', varchar);
+    AddField(True, 'PeriodTo', varchar);
   end;
 
   ConflTable := TTable.Create(

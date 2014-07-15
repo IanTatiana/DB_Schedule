@@ -7,7 +7,7 @@ interface
 uses
   types, Classes, SysUtils, Forms, Grids, ExtCtrls, UTables, SQLdb,
   IBConnection, db, Dialogs, UMyDBTools, StdCtrls, Graphics, Controls,
-  UFilter, UEditCardForm, UConflictsForm, Buttons;
+  UFilter, UEditCardForm, UConflictsForm, Buttons, UPeriods;
 
 type
 
@@ -17,7 +17,8 @@ type
 
   TScheduleElem =  record
     Header, ID: string;
-    SchElemField: array [0..6] of string;
+    SchElemField: array [0..8] of string;
+    //FFrom, Fto: string;
   end;
 
   THiperArray = array of array of array of TScheduleElem;
@@ -41,13 +42,14 @@ type
     ScheduleElem: TScheduleElem;
     ShowHeads,
     ShowAll: boolean;
-    CheckIndicate: Array [0..6] of TCheckBox;
+    CheckIndicate: Array [0..8] of TCheckBox;
     Indicate: TImage;
     DG_DblClick: boolean;
     OrderInCell: integer;
     CurPos: TPoint;
     ConflictsLabel: TLabel;
     ConflictsPanel: TPanel;
+    PeriodsPanel: TPeriodsPanel;
     ConflictsBtn: TButton;
     AddBtn,
     DelBtn,
@@ -95,9 +97,10 @@ const
   CWidth_h = 380;
   RHeight_h = 48;
   CWidth = 380;
-  RHeight = 150;
-  SchElemName: array [0..6] of string = ( 'Предмет: ', 'Тип занятий: ',
-    'Преподаватель: ', 'Время занятий: ', 'День недели: ', 'Группа: ', 'Аудитория: ');
+  RHeight = 130;
+  SchElemName: array [0..8] of string = ( 'Предмет: ', 'Тип занятий: ',
+    'Преподаватель: ', 'Время занятий: ', 'День недели: ', 'Группа: ',
+    'Аудитория: ', 'с: ', 'до: ');
 
 var
   ScheduleTable: TScheduleTable;
@@ -128,6 +131,8 @@ begin
   CreateSectionPanel();
   CreateCheckPanel();
   CreatePreferPanel();
+  PeriodsPanel := TPeriodsPanel.Create(
+    ToolsPanel, PreferPanel.Left + PreferPanel.Width);
   DG_DblClick := False;
   ScheduleGrid := TDrawGrid.Create(Self);
   with ScheduleGrid do begin
@@ -245,9 +250,17 @@ begin
       do begin
         ScheduleMatrix[i][j][r].ID :=
           DBTools.DataSource.DataSet.Fields[2].AsString;
-        for k := 0 to DBTools.DataSource.DataSet.FieldCount - 4 do
-          ScheduleMatrix[i][j][r].SchElemField[k] :=
-            DBTools.DataSource.DataSet.Fields[k + 3].AsString;
+        for k := 0 to DBTools.DataSource.DataSet.FieldCount - 4 do begin
+          if k < DBTools.DataSource.DataSet.FieldCount - 6 then
+            ScheduleMatrix[i][j][r].SchElemField[k] :=
+              DBTools.DataSource.DataSet.Fields[k + 3].AsString
+          else
+            if (DBTools.DataSource.DataSet.Fields[k + 3].AsString = '') then
+              ScheduleMatrix[i][j][r].SchElemField[k] := 'не указано'
+            else
+              ScheduleMatrix[i][j][r].SchElemField[k] :=
+                DBTools.DataSource.DataSet.Fields[k + 3].AsString;
+        end;
         DBTools.DataSource.DataSet.Next;
         r += 1;
       end;
@@ -261,7 +274,7 @@ end;
 
 procedure TScheduleTable.SetCellHeight(aRow, r: integer);
 begin
-  ScheduleGrid.RowHeights[aRow] := (r + 1)* RHeight;
+  ScheduleGrid.RowHeights[aRow] := (r + 1) * RHeight;
 end;
 
 //---.DrawGridMethods-----------------------------------------------------------
@@ -304,9 +317,9 @@ procedure TScheduleTable.DrawGridDrawCell(
 var
   i, r: integer;
   Head: string;
-  Indents: array [0..6, 0..1] of integer = (
+  Indents: array [0..8, 0..1] of integer = (
     (18, 18), (210, 54), (18, 36) , (18, 54),
-    (18, 72), (210, 36), (210, 72));
+    (18, 72), (210, 36), (210, 72), (18, 90), (210, 90));
 begin
   if (aCol = 0) and (aRow = 0) then begin
     ScheduleGrid.Canvas.Pen.Color := clBlack;

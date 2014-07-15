@@ -69,7 +69,7 @@ implementation
 function TExport.Selection(AHorzName, AVertName: string): string;
 begin
   Result :=
-    '  По горизонтали: ' + AHorzName + '; '#13#10 +
+    '  По горизонтали: ' + AHorzName + '; '#10#13 +
     '  по вертикали: ' + AVertName + '; ';
 end;
 

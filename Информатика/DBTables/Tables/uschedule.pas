@@ -11,6 +11,10 @@ uses
 
 type
 
+  TPeriod = record
+    Before, After: string;
+  end;
+
   TScheduleElem =  record
     Header, ID: string;
     SchElemField: array [0..6] of string;
@@ -91,9 +95,10 @@ const
   CWidth_h = 380;
   RHeight_h = 48;
   CWidth = 380;
-  RHeight = 110;
+  RHeight = 150;
   SchElemName: array [0..6] of string = ( 'Предмет: ', 'Тип занятий: ',
     'Преподаватель: ', 'Время занятий: ', 'День недели: ', 'Группа: ', 'Аудитория: ');
+
 var
   ScheduleTable: TScheduleTable;
 
@@ -143,6 +148,123 @@ begin
   inherited Show;
 end;
 
+procedure TScheduleTable.CloseCard(Sender: TObject; var CanClose: TCloseAction);
+begin
+  ScheduleTable.ShowSchedule(Self);
+end;
+
+function TScheduleTable.GetFieldName(AFieldName: string): string;
+begin
+  Result := DBTools.DataSource.DataSet.FieldByName(AFieldName).Value;
+  DBTools.DataSource.DataSet.Next;
+end;
+
+function TScheduleTable.GetCountFrom(idx: integer):integer;
+var
+  s: TForeignKey;
+begin
+  s := Table.Fields[idx].ForeignKey;
+  DBTools.ExecuteQuery('SELECT COUNT(' + s.FieldName + ') FROM ' + s.Table.Name);
+  Result := StrToInt(DBTools.DataSource.DataSet.FieldByName('COUNT').Text);
+end;
+
+procedure TScheduleTable.ShowSchedule(Sender: TObject);
+var
+  i: integer;
+begin
+  Indicate.Visible := True;
+  for i := 0 to High(CheckIndicate) do
+    CheckIndicate[i].Checked := True;
+  CheckIndicate[CB_Horz.ItemIndex].Checked := False;
+  CheckIndicate[CB_Vert.ItemIndex].Checked := False;
+  FilterPanel.SelectText := 'SELECT ' +
+    Table.SelectFields[CB_Horz.ItemIndex + 1].OrderID + ', ' +
+    Table.SelectFields[CB_Vert.ItemIndex + 1].OrderID + ', ' +
+    Table.FieldsList() + ' FROM ' + Table.JoinName;;
+  FilterPanel.OrderByText :=
+    ' ORDER BY ' + Table.SelectFields[CB_Horz.ItemIndex + 1].OrderID + ', ' +
+    Table.SelectFields[CB_Vert.ItemIndex + 1].OrderID;
+  FilterPanel.ShowBtnClick(Self);
+end;
+
+procedure TScheduleTable.UpdateScheduleGrid();
+var
+  i: integer;
+  ForeignKey: UTables.TForeignKey;
+  q: TMyDBTools;
+begin
+  SetLength(ScheduleMatrix, 0, 0, 0);
+  SetLength(ShowElemOfCell, 0, 0);
+  q := TMyDBTools.Create(Self, 9);
+  with ScheduleGrid do begin
+    Options := Options + [goSmoothScroll];
+    ColCount := GetCountFrom(CB_Horz.ItemIndex + 1) + 1;
+    RowCount := GetCountFrom(CB_Vert.ItemIndex + 1) + 1;
+    SetLength(ScheduleMatrix, ColCount, RowCount, 100);
+    SetLength(ShowElemOfCell, ColCount, RowCount);
+    Canvas.Pen.Color := clBlack;
+    ForeignKey := Table.Fields[CB_Horz.ItemIndex + 1].ForeignKey;
+    q.ExecuteQuery('SELECT * FROM ' + ForeignKey.Table.Name +
+      ' ORDER BY ' + ForeignKey.Table.OrderBy);
+    for i := 1 to ColCount - 1 do begin
+      ColWidths[i] := CWidth;
+      ScheduleMatrix[i][0][0].Header :=
+        q.SQLQuery.FieldByName(ByName(ForeignKey.FieldName)).Value;
+      q.SQLQuery.Next;
+    end;
+    ForeignKey := Table.Fields[CB_Vert.ItemIndex + 1].ForeignKey;
+    q.ExecuteQuery('SELECT * FROM ' + ForeignKey.Table.Name +
+      ' ORDER BY ' + ForeignKey.Table.OrderBy);
+    for i := 1 to RowCount - 1 do begin
+      RowHeights[i] := RHeight;
+      ScheduleMatrix[0][i][0].Header :=
+        q.SQLQuery.FieldByName(ByName(ForeignKey.FieldName)).Value;
+      q.SQLQuery.Next;
+    end;
+  end;
+  q.Free; q :=  nil;
+  if ShowHeads then begin
+    ScheduleGrid.ColWidths[0] :=
+      Table.SelectFields[CB_Vert.ItemIndex + 1].Width + 18;
+    ScheduleGrid.RowHeights[0] := RHeight_h;
+  end;
+end;
+
+procedure TScheduleTable.FillScheduleMatrix();
+var
+  i, j, k, r: integer;
+begin
+  for i := 1 to ScheduleGrid.ColCount - 1 do begin
+    for j := 1 to ScheduleGrid.RowCount - 1 do begin
+      r := 0;
+      while (not DBTools.DataSource.DataSet.EOF) and
+            (DBTools.DataSource.DataSet.Fields[CB_Horz.ItemIndex + 3].Value
+               = ScheduleMatrix[i][0][0].Header) and
+            (DBTools.DataSource.DataSet.Fields[CB_Vert.ItemIndex + 3].Value
+               = ScheduleMatrix[0][j][0].Header)
+      do begin
+        ScheduleMatrix[i][j][r].ID :=
+          DBTools.DataSource.DataSet.Fields[2].AsString;
+        for k := 0 to DBTools.DataSource.DataSet.FieldCount - 4 do
+          ScheduleMatrix[i][j][r].SchElemField[k] :=
+            DBTools.DataSource.DataSet.Fields[k + 3].AsString;
+        DBTools.DataSource.DataSet.Next;
+        r += 1;
+      end;
+      SetLength(ScheduleMatrix[i][j], r + 1);
+      if ShowAll and (ScheduleGrid.RowHeights[j] < r* RHeight)then
+        ScheduleGrid.RowHeights[j] := r * RHeight;
+    end;
+  end;
+  ScheduleGrid.Invalidate;
+end;
+
+procedure TScheduleTable.SetCellHeight(aRow, r: integer);
+begin
+  ScheduleGrid.RowHeights[aRow] := (r + 1)* RHeight;
+end;
+
+//---.DrawGridMethods-----------------------------------------------------------
 procedure TScheduleTable.DrawGridDblClick(Sender: TObject);
 var
   i, Col, Row: integer;
@@ -177,6 +299,62 @@ begin
   CreateEditBtn(ScheduleGrid.CellRect(Col, Row), Point(X, Y));
 end;
 
+procedure TScheduleTable.DrawGridDrawCell(
+  Sender: TObject; aCol, aRow: Integer; aRect: TRect; aState:TGridDrawState);
+var
+  i, r: integer;
+  Head: string;
+  Indents: array [0..6, 0..1] of integer = (
+    (18, 18), (210, 54), (18, 36) , (18, 54),
+    (18, 72), (210, 36), (210, 72));
+begin
+  if (aCol = 0) and (aRow = 0) then begin
+    ScheduleGrid.Canvas.Pen.Color := clBlack;
+    ScheduleGrid.Canvas.Line(aRect.TopLeft, aRect.BottomRight);
+    Exit;
+  end;
+  if (aCol = 0) or (aRow = 0) then begin
+    with ScheduleGrid.Canvas do begin
+      Font.Style := [fsBold];
+      TextOut(aRect.Left + Indents[0, 0], aRect.Top + Indents[0, 1],
+        ScheduleMatrix[aCol][ARow][0].Header);
+    end;
+    Exit;
+  end;
+
+  if ScheduleMatrix[aCol][aRow][0].SchElemField[0] = '' then Exit;
+  r := 0;
+  while (ScheduleMatrix[aCol][aRow][r].SchElemField[0] <> '') do begin
+    with ScheduleGrid.Canvas do begin
+      Rectangle(
+        aRect.Left, aRect.Top + r * RHeight,
+        aRect.Right, aRect.Bottom + r * RHeight);
+      for i := 0 to High(CheckIndicate) do
+        if CheckIndicate[i].Checked then begin
+          if ShowHeads then
+            Head := SchElemName[i]
+          else
+            Head := '';
+          TextOut(
+              aRect.Left + Indents[i][0],
+              aRect.Top + Indents[i][1] + r * RHeight,
+              Head + ScheduleMatrix[aCol][aRow][r].SchElemField[i]);
+        end;
+    end;
+    r += 1;
+  end;
+  if (Length(ScheduleMatrix[aCol][aRow]) > 2) and
+     (not ShowAll) and (not ShowElemOfCell[aCol][aRow]) then
+    with ScheduleGrid.Canvas do begin
+      Pen.Color := clBlack;
+      Brush.Color := clYellow;
+      Rectangle(
+        aRect.BottomRight.X - 12, aRect.BottomRight.Y - 12,
+        aRect.BottomRight.X, aRect.BottomRight.Y);
+    end;
+end;
+
+//---.EditBtns------------------------------------------------------------------
 procedure TScheduleTable.CreateEditBtn(aRect: TRect; CursorPos: TPoint);
 var
   Col, Row: integer;
@@ -199,7 +377,7 @@ begin
     Glyph.LoadFromFile('icons/add.bmp');
     OnClick := @AddElem;
   end;
-  if ScheduleMatrix[Col][Row][OrderInCell].SchElemField[0] <> '' then begin
+  if (ScheduleMatrix[Col][Row][OrderInCell].SchElemField[0] <> '') then begin
     DelBtn := TBitBtn.Create(ScheduleGrid);
     with DelBtn do begin
       Parent := ScheduleGrid;
@@ -263,6 +441,7 @@ begin
   UpdateBtn.Free; UpdateBtn := nil;
 end;
 
+//---.Panels--------------------------------------------------------------------
 procedure TScheduleTable.CreateSectionPanel();
 var
   i: integer;
@@ -333,11 +512,6 @@ begin
     Left := ShowBtn.Left + ShowBtn.Width + indent;
     Picture.LoadFromFile('yes.png');
   end;
-end;
-
-procedure TScheduleTable.CloseCard(Sender: TObject; var CanClose: TCloseAction);
-begin
-  ScheduleTable.ShowSchedule(Self);
 end;
 
 procedure TScheduleTable.ChangeIndicate(Sender: TObject);
@@ -515,172 +689,6 @@ procedure TScheduleTable.ShowAllClick(Sender: TObject);
 begin
   ShowAll := not ShowAll;
   ShowSchedule(Self);
-end;
-
-function TScheduleTable.GetFieldName(AFieldName: string): string;
-begin
-  Result := DBTools.DataSource.DataSet.FieldByName(AFieldName).Value;
-  DBTools.DataSource.DataSet.Next;
-end;
-
-function TScheduleTable.GetCountFrom(idx: integer):integer;
-var
-  s: TForeignKey;
-begin
-  s := Table.Fields[idx].ForeignKey;
-  DBTools.ExecuteQuery('SELECT COUNT(' + s.FieldName + ') FROM ' + s.Table.Name);
-  Result := StrToInt(DBTools.DataSource.DataSet.FieldByName('COUNT').Text);
-end;
-
-procedure TScheduleTable.ShowSchedule(Sender: TObject);
-var
-  i: integer;
-begin
-  Indicate.Visible := True;
-  for i := 0 to High(CheckIndicate) do
-    CheckIndicate[i].Checked := True;
-  CheckIndicate[CB_Horz.ItemIndex].Checked := False;
-  CheckIndicate[CB_Vert.ItemIndex].Checked := False;
-  FilterPanel.SelectText := 'SELECT ' +
-    Table.SelectFields[CB_Horz.ItemIndex + 1].OrderID + ', ' +
-    Table.SelectFields[CB_Vert.ItemIndex + 1].OrderID + ', ' +
-    Table.FieldsList() + ' FROM ' + Table.JoinName;;
-  FilterPanel.OrderByText :=
-    ' ORDER BY ' + Table.SelectFields[CB_Horz.ItemIndex + 1].OrderID + ', ' +
-    Table.SelectFields[CB_Vert.ItemIndex + 1].OrderID;
-  FilterPanel.ShowBtnClick(Self);
-end;
-
-procedure TScheduleTable.UpdateScheduleGrid();
-var
-  i: integer;
-  ForeignKey: UTables.TForeignKey;
-  q: TMyDBTools;
-begin
-  SetLength(ScheduleMatrix, 0, 0, 0);
-  SetLength(ShowElemOfCell, 0, 0);
-  q := TMyDBTools.Create(Self, 9);
-  with ScheduleGrid do begin
-    Options := Options + [goSmoothScroll];
-    ColCount := GetCountFrom(CB_Horz.ItemIndex + 1) + 1;
-    RowCount := GetCountFrom(CB_Vert.ItemIndex + 1) + 1;
-    SetLength(ScheduleMatrix, ColCount, RowCount, 100);
-    SetLength(ShowElemOfCell, ColCount, RowCount);
-    Canvas.Pen.Color := clBlack;
-    ForeignKey := Table.Fields[CB_Horz.ItemIndex + 1].ForeignKey;
-    q.ExecuteQuery('SELECT * FROM ' + ForeignKey.Table.Name +
-      ' ORDER BY ' + ForeignKey.Table.OrderBy);
-    for i := 1 to ColCount - 1 do begin
-      ColWidths[i] := CWidth;
-      ScheduleMatrix[i][0][0].Header :=
-        q.SQLQuery.FieldByName(ByName(ForeignKey.FieldName)).Value;
-      q.SQLQuery.Next;
-    end;
-    ForeignKey := Table.Fields[CB_Vert.ItemIndex + 1].ForeignKey;
-    q.ExecuteQuery('SELECT * FROM ' + ForeignKey.Table.Name +
-      ' ORDER BY ' + ForeignKey.Table.OrderBy);
-    for i := 1 to RowCount - 1 do begin
-      RowHeights[i] := RHeight;
-      ScheduleMatrix[0][i][0].Header :=
-        q.SQLQuery.FieldByName(ByName(ForeignKey.FieldName)).Value;
-      q.SQLQuery.Next;
-    end;
-  end;
-  q.Free; q :=  nil;
-  if ShowHeads then begin
-    ScheduleGrid.ColWidths[0] :=
-      Table.SelectFields[CB_Vert.ItemIndex + 1].Width + 18;
-    ScheduleGrid.RowHeights[0] := RHeight_h;
-  end;
-end;
-
-procedure TScheduleTable.FillScheduleMatrix();
-var
-  i, j, k, r: integer;
-begin
-  for i := 1 to ScheduleGrid.ColCount - 1 do begin
-    for j := 1 to ScheduleGrid.RowCount - 1 do begin
-      r := 0;
-      while (not DBTools.DataSource.DataSet.EOF) and
-            (DBTools.DataSource.DataSet.Fields[CB_Horz.ItemIndex + 3].Value
-               = ScheduleMatrix[i][0][0].Header) and
-            (DBTools.DataSource.DataSet.Fields[CB_Vert.ItemIndex + 3].Value
-               = ScheduleMatrix[0][j][0].Header)
-      do begin
-        ScheduleMatrix[i][j][r].ID :=
-          DBTools.DataSource.DataSet.Fields[2].AsString;
-        for k := 0 to DBTools.DataSource.DataSet.FieldCount - 4 do
-          ScheduleMatrix[i][j][r].SchElemField[k] :=
-            DBTools.DataSource.DataSet.Fields[k + 3].AsString;
-        DBTools.DataSource.DataSet.Next;
-        r += 1;
-      end;
-      SetLength(ScheduleMatrix[i][j], r + 1);
-      if ShowAll and (ScheduleGrid.RowHeights[j] < r* RHeight)then
-        ScheduleGrid.RowHeights[j] := r * RHeight;
-    end;
-  end;
-  ScheduleGrid.Invalidate;
-end;
-
-procedure TScheduleTable.SetCellHeight(aRow, r: integer);
-begin
-  ScheduleGrid.RowHeights[aRow] := (r + 1)* RHeight;
-end;
-
-procedure TScheduleTable.DrawGridDrawCell(
-  Sender: TObject; aCol, aRow: Integer; aRect: TRect; aState:TGridDrawState);
-var
-  i, r: integer;
-  Head: string;
-  Indents: array [0..6, 0..1] of integer = (
-    (18, 18), (210, 54), (18, 36) , (18, 54),
-    (18, 72), (210, 36), (210, 72));
-begin
-  if (aCol = 0) and (aRow = 0) then begin
-    ScheduleGrid.Canvas.Pen.Color := clBlack;
-    ScheduleGrid.Canvas.Line(aRect.TopLeft, aRect.BottomRight);
-    Exit;
-  end;
-  if (aCol = 0) or (aRow = 0) then begin
-    with ScheduleGrid.Canvas do begin
-      Font.Style := [fsBold];
-      TextOut(aRect.Left + Indents[0, 0], aRect.Top + Indents[0, 1],
-        ScheduleMatrix[aCol][ARow][0].Header);
-    end;
-    Exit;
-  end;
-
-  if ScheduleMatrix[aCol][aRow][0].SchElemField[0] = '' then Exit;
-  r := 0;
-  while (ScheduleMatrix[aCol][aRow][r].SchElemField[0] <> '') do begin
-    with ScheduleGrid.Canvas do begin
-      Rectangle(
-        aRect.Left, aRect.Top + r * RHeight,
-        aRect.Right, aRect.Bottom + r * RHeight);
-      for i := 0 to High(CheckIndicate) do
-        if CheckIndicate[i].Checked then begin
-          if ShowHeads then
-            Head := SchElemName[i]
-          else
-            Head := '';
-          TextOut(
-              aRect.Left + Indents[i][0],
-              aRect.Top + Indents[i][1] + r * RHeight,
-              Head + ScheduleMatrix[aCol][aRow][r].SchElemField[i]);
-        end;
-    end;
-    r += 1;
-  end;
-  if (Length(ScheduleMatrix[aCol][aRow]) > 2) and
-     (not ShowAll) and (not ShowElemOfCell[aCol][aRow]) then
-    with ScheduleGrid.Canvas do begin
-      Pen.Color := clBlack;
-      Brush.Color := clYellow;
-      Rectangle(
-        aRect.BottomRight.X - 12, aRect.BottomRight.Y - 12,
-        aRect.BottomRight.X, aRect.BottomRight.Y);
-    end;
 end;
 
 end.

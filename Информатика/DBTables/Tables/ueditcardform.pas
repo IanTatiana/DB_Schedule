@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, UTables, UMyDBTools;
+  StdCtrls, UTables, UMyDBTools, UPeriods;
 
 type
   TCardType = (ctAddition, ctDeletion, ctUpdating);
@@ -14,6 +14,7 @@ type
   TFields = record
     FLabel: TLabel;
     FComboBox: TComboBox;
+    FDate: TDateBoxes;
     FEdit: TEdit;
     FEngName: string;
   end;
@@ -112,6 +113,11 @@ begin
     end;
     db1.ExecuteQuery('SELECT ' + FTable.FieldsList() +
       ' FROM ' + FTable.JoinName);
+    if FTable.Fields[i].DateType = date then begin
+      FFields[High(FFields)].FDate :=
+        TDateBoxes.Create(Self, i * 16 + (i - 1) * Height, 120);
+      Continue;
+    end;
     if(FTable.Fields[i].ForeignKey.Table.Name = UTables.null) and
       (FTable.Fields[i].DateType = int) then
     begin
@@ -136,8 +142,12 @@ begin
       Top := i * 16 + (i - 1) * Height;
       db1.DataSource.DataSet.First;
       if FTable.Fields[i].ForeignKey.Table.Name = UTables.null then
-        while not db1.SQLQuery.EOF do
-          Items.Add(db1.GetValue(i))
+        while not db1.SQLQuery.EOF do begin
+          if db1.DataSource.DataSet.Fields[i].AsString <> '' then
+            Items.Add(db1.GetValue(i))
+          else
+            db1.DataSource.DataSet.Next;
+        end
       else begin
         db1.ExecuteQuery('SELECT * FROM ' +
           FTable.Fields[i].ForeignKey.Table.Name + ' ORDER BY ' +
@@ -393,7 +403,7 @@ constructor TEditCard.CreateNew(AOwner: TComponent; Num: Integer=0);
 begin
   inherited CreateNew(AOwner);
   Width := 332;
-  Height := 400;
+  Height := 450;
   Position := poScreenCenter;
   BorderIcons := BorderIcons - [biMaximize];
   BorderStyle := BorderStyle.bsSingle;

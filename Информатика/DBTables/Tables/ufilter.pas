@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, StdCtrls, ExtCtrls, UTables, Buttons, Dialogs, Controls,
-  UMyDBTools, Forms;
+  UMyDBTools, Forms, UPeriods;
 
 const
   FilterWidth = 256;
@@ -171,6 +171,7 @@ begin
         lim;
     end;
   end;
+  //if
   DBTools.ExecuteQuery(DBTools.SQLQuery.SQL.Text + ' ' + OrderByText);
   if Parent is TTableForm then
     (Parent as TTableForm).Russification;

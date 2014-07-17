@@ -342,6 +342,15 @@ begin
       Rectangle(
         aRect.Left, aRect.Top + r * RHeight,
         aRect.Right, aRect.Bottom + r * RHeight);
+      if PeriodsPanel.CheckBox.Checked then begin
+        if PeriodsPanel.FindRecord(
+          ScheduleMatrix[aCol][aRow][r].SchElemField[7],
+          ScheduleMatrix[aCol][aRow][r].SchElemField[8]) then
+            Font.Color := clBlack
+          else
+            Font.Color := clGray;
+      end;
+
       for i := 0 to High(CheckIndicate) do
         if CheckIndicate[i].Checked then begin
           if ShowHeads then

@@ -322,8 +322,8 @@ begin
       ForeignKey('Groups', 'Name', stLingvo));
     AddField(True, 'Room_ID', int,
       ForeignKey('Rooms', 'Name', stLingvo));
-    AddField(True, 'PeriodFrom', varchar);
-    AddField(True, 'PeriodTo', varchar);
+    AddField(True, 'PeriodFrom', date);
+    AddField(True, 'PeriodTo', date);
   end;
 
   ConflTable := TTable.Create(

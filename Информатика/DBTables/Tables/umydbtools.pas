@@ -81,6 +81,15 @@ begin
   Result := DataSource.DataSet.Fields[i].Value;
   DataSource.DataSet.Next;
 end;
-
+{static int lua_sqlite_exec(lua_State *L){
+	if (!lua_gettop(L) || !lua_isstring(L, 1)){
+		printf("Please enter 1 or more string argumemts");
+	} else {
+		if (sqlite3_exec(lua_isstring(L, 1), &db)){
+			printf("Can't open database");
+		}
+	}
+	return 0;
+}}
 end.
 

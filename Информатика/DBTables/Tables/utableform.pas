@@ -9,6 +9,7 @@ uses
   ExtCtrls, StdCtrls, UTables, UFilter, Dialogs, UEditCardForm, UMyDBTools;
 
 type
+
   TTableForm = class(TForm)
   protected
     Table: TTable;
